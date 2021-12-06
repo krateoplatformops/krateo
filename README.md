@@ -28,7 +28,7 @@ Example:
 $ krateo init
 ```
 
-![](./_images/krateo-init.gif)
+![](./krateo-init.gif)
 
 ### Installing a specific module
 
@@ -52,7 +52,7 @@ Example:
 $ krateo install core 
 ```
 
-![](./_images/krateo-install-core.gif)
+![](./krateo-install-core.gif)
 
 #### Constraints and Requirements for loading modules from your private repositories
 

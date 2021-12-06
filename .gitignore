@@ -50,4 +50,4 @@ vendor/**
 .vendor-new/**
 .tool-versions
 demo.yaml
-*.gif
+# *.gif
