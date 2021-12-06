@@ -1,0 +1,30 @@
+# Run locally with: goreleaser --rm-dist --snapshot --skip-publish
+project_name: krateo
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+builds:
+- env:
+    - CGO_ENABLED=0
+  ldflags:
+    - -s -w -X "{{.Env.ROOT_PACKAGE}}/cmd/version.Version={{.Version}}" -X "{{.Env.ROOT_PACKAGE}}/cmd/version.build={{.ShortCommit}}"
+    - -a -extldflags "-static"
+  goos:
+    - windows
+    - linux
+    - darwin
+  goarch:
+    # - arm
+    # - arm64
+    - amd64
+  goarm:
+    - 7
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+release:
+  github:
+  prerelease: auto

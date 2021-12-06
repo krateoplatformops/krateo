@@ -1,0 +1,14 @@
+apiVersion: argocd.projectkerberus.io/v1alpha1
+kind: Token
+metadata:
+  name: krateo-dashboard-argocd-token
+spec:
+  forProvider:
+    expiresIn: 0s
+    account: krateo-dashboard
+    writeTokenSecretToRef:
+      name: argocd-krateo-dashboard-credentials
+      key: authToken
+      namespace: argo-system
+  providerConfigRef:
+    name: argocd-provider-config

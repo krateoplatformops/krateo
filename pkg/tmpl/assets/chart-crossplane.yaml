@@ -1,0 +1,8 @@
+chart:
+  name: crossplane
+  repository: https://charts.crossplane.io/stable
+  version: 1.5.0
+namespace: {{ default "crossplane-system" .Namespace }}
+set:
+  - name: provider.packages
+    value: "{registry.upbound.io/crossplane/provider-helm:v0.9.0}"
