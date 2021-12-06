@@ -7,7 +7,7 @@ ifneq (,$(wildcard ../../.env))
 	export $(shell sed 's/=.*//' ../../.env)
 endif
 
-NAME := krateoctl
+NAME := krateo
 ORG := krateoplatformops
 ORG_REPO := $(ORG)/$(NAME)
 ROOT_PACKAGE := github.com/$(ORG_REPO)

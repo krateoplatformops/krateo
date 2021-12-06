@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/krateoplatformops/krateoctl/cmd/flags"
-	"github.com/krateoplatformops/krateoctl/pkg/actions"
-	"github.com/krateoplatformops/krateoctl/pkg/eventbus"
-	"github.com/krateoplatformops/krateoctl/pkg/events"
-	"github.com/krateoplatformops/krateoctl/pkg/log"
+	"github.com/krateoplatformops/krateo/cmd/flags"
+	"github.com/krateoplatformops/krateo/pkg/actions"
+	"github.com/krateoplatformops/krateo/pkg/eventbus"
+	"github.com/krateoplatformops/krateo/pkg/events"
+	"github.com/krateoplatformops/krateo/pkg/log"
 	"github.com/spf13/cobra"
 )
 

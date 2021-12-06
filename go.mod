@@ -1,4 +1,4 @@
-module github.com/krateoplatformops/krateoctl
+module github.com/krateoplatformops/krateo
 
 go 1.17
 

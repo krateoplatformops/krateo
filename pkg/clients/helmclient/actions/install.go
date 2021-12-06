@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/krateoplatformops/krateoctl/pkg/clients/helmclient"
+	"github.com/krateoplatformops/krateo/pkg/clients/helmclient"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"

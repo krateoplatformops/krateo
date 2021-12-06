@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/krateoplatformops/krateoctl/cmd"
-	"github.com/krateoplatformops/krateoctl/pkg/log"
+	"github.com/krateoplatformops/krateo/cmd"
+	"github.com/krateoplatformops/krateo/pkg/log"
 )
 
 func main() {

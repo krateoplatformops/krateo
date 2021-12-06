@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/krateoplatformops/krateoctl/pkg/crds"
-	"github.com/krateoplatformops/krateoctl/pkg/eventbus"
-	"github.com/krateoplatformops/krateoctl/pkg/events"
-	"github.com/krateoplatformops/krateoctl/pkg/gitutils"
-	"github.com/krateoplatformops/krateoctl/pkg/osutils"
+	"github.com/krateoplatformops/krateo/pkg/crds"
+	"github.com/krateoplatformops/krateo/pkg/eventbus"
+	"github.com/krateoplatformops/krateo/pkg/events"
+	"github.com/krateoplatformops/krateo/pkg/gitutils"
+	"github.com/krateoplatformops/krateo/pkg/osutils"
 	"sigs.k8s.io/yaml"
 )
 

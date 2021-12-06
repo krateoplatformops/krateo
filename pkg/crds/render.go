@@ -1,7 +1,7 @@
 package crds
 
 import (
-	"github.com/krateoplatformops/krateoctl/pkg/strvals"
+	"github.com/krateoplatformops/krateo/pkg/strvals"
 	"sigs.k8s.io/yaml"
 )
 

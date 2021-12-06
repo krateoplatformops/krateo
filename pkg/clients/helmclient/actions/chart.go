@@ -3,7 +3,7 @@ package actions
 import (
 	"context"
 
-	"github.com/krateoplatformops/krateoctl/pkg/clients/helmclient"
+	"github.com/krateoplatformops/krateo/pkg/clients/helmclient"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"

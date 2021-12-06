@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/krateoplatformops/krateoctl/pkg/clients/helmclient"
+	"github.com/krateoplatformops/krateo/pkg/clients/helmclient"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ktypes "sigs.k8s.io/kustomize/api/types"

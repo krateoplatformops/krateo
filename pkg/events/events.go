@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/krateoplatformops/krateoctl/pkg/eventbus"
+	"github.com/krateoplatformops/krateo/pkg/eventbus"
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/krateoplatformops/krateoctl/pkg/clients/helmclient"
+	"github.com/krateoplatformops/krateo/pkg/clients/helmclient"
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/strvals"
 	"sigs.k8s.io/controller-runtime/pkg/client"

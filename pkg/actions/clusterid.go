@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/krateoplatformops/krateoctl/pkg/clients/kubeclient"
+	"github.com/krateoplatformops/krateo/pkg/clients/kubeclient"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 	v1 "k8s.io/api/core/v1"

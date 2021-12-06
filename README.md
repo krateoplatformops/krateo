@@ -28,6 +28,8 @@ Example:
 $ krateo init
 ```
 
+![](./_images/krateo-init.gif)
+
 ### Installing a specific module
 
 Usage: **`krateo install <MODULE> [flags]`** where:
@@ -49,6 +51,8 @@ Example:
 ```sh
 $ krateo install core 
 ```
+
+![](./_images/krateo-install-core.gif)
 
 #### Constraints and Requirements for loading modules from your private repositories
 
@@ -79,4 +83,3 @@ The project tree must follow this structure:
 │   ├── krateo-module-NAME.yaml
 │   └── krateo-package-module-NAME.yaml
 ```
-

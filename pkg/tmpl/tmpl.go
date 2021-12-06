@@ -7,9 +7,8 @@ import (
 	"html/template"
 	"path"
 
-	"github.com/krateoplatformops/krateoctl/pkg/clients/helmclient"
-	//"gopkg.in/yaml.v2"
 	"github.com/ghodss/yaml"
+	"github.com/krateoplatformops/krateo/pkg/clients/helmclient"
 )
 
 //go:embed assets/*
