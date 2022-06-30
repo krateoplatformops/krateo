@@ -46,7 +46,7 @@ func Kubernetes() *providerInfo {
 func Git() *providerInfo {
 	return &providerInfo{
 		name:            "git",
-		version:         "v0.3.9",
+		version:         "v1.0.0",
 		imageUriPattern: "ghcr.io/krateoplatformops/provider-%s:%s",
 		metaUrl:         "https://raw.githubusercontent.com/krateoplatformops/provider-git/main/package/crossplane.yaml",
 	}
@@ -55,7 +55,7 @@ func Git() *providerInfo {
 func GitHub() *providerInfo {
 	return &providerInfo{
 		name:            "github",
-		version:         "v0.1.8",
+		version:         "v1.0.0",
 		imageUriPattern: "ghcr.io/krateoplatformops/provider-%s:%s",
 		metaUrl:         "https://raw.githubusercontent.com/krateoplatformops/provider-github/main/package/crossplane.yaml",
 	}
@@ -64,7 +64,7 @@ func GitHub() *providerInfo {
 func ArgoCdToken() *providerInfo {
 	return &providerInfo{
 		name:            "argocd-token",
-		version:         "0.2.2",
+		version:         "v1.0.0",
 		imageUriPattern: "ghcr.io/krateoplatformops/provider-%s:%s",
 		metaUrl:         "https://raw.githubusercontent.com/krateoplatformops/provider-argocd-token/main/package/crossplane.yaml",
 	}
