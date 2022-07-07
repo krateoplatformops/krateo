@@ -41,7 +41,7 @@ func NewInitCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			o.Config.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(20, 50)
+			o.Config.RateLimiter = flowcontrol.NewFakeAlwaysRateLimiter() //flowcontrol.NewTokenBucketRateLimiter(20, 50)
 
 			l := log.GetInstance()
 			if o.Verbose {
