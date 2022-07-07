@@ -11,6 +11,7 @@ import (
 	"github.com/krateoplatformops/krateo/pkg/platform"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/flowcontrol"
 )
 
 func NewInitCmd() *cobra.Command {
@@ -40,6 +41,7 @@ func NewInitCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			o.Config.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(20, 50)
 
 			l := log.GetInstance()
 			if o.Verbose {

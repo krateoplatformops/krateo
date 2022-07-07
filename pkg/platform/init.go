@@ -66,13 +66,14 @@ func Init(opts InitOptions) error {
 	}
 	opts.Bus.Publish(events.NewStartWaitEvent("role bindings for crossplane providers successfully created"))
 
-	opts.Bus.Publish(events.NewStartWaitEvent("creating namespace '%s'...", namespaces.KrateoSystem))
-	err = namespaces.Create(dc, namespaces.KrateoSystem)
-	if err != nil {
-		return err
-	}
-	opts.Bus.Publish(events.NewDoneEvent("namespace '%s' successfully created", namespaces.KrateoSystem))
-
+	/*
+		opts.Bus.Publish(events.NewStartWaitEvent("creating namespace '%s'...", namespaces.KrateoSystem))
+		err = namespaces.Create(dc, namespaces.KrateoSystem)
+		if err != nil {
+			return err
+		}
+		opts.Bus.Publish(events.NewDoneEvent("namespace '%s' successfully created", namespaces.KrateoSystem))
+	*/
 	return nil
 }
 
