@@ -46,7 +46,7 @@ func Kubernetes() *providerInfo {
 func Git() *providerInfo {
 	return &providerInfo{
 		name:            "git",
-		version:         "v1.0.0",
+		version:         "v1.1.2",
 		imageUriPattern: "ghcr.io/krateoplatformops/provider-%s:%s",
 		metaUrl:         "https://raw.githubusercontent.com/krateoplatformops/provider-git/main/package/crossplane.yaml",
 	}
