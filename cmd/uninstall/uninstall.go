@@ -19,6 +19,7 @@ import (
 type uninstallOptions struct {
 	bus        eventbus.Bus
 	kubeconfig string
+	context    string
 	verbose    bool
 }
 
@@ -34,10 +35,11 @@ func NewUninstallCmd() *cobra.Command {
 		SilenceErrors:         true,
 		Example:               "  krateo unnstall",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			verbose, _ := cmd.Flags().GetBool(flags.Verbose)
+			o.verbose, _ = cmd.Flags().GetBool(flags.Verbose)
+			o.context, _ = cmd.Flags().GetString(flags.Context)
 
 			l := log.GetInstance()
-			if verbose {
+			if o.verbose {
 				l.SetLevel(log.DebugLevel)
 			}
 
@@ -62,6 +64,8 @@ func NewUninstallCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&o.verbose, flags.Verbose, "v", false, "dump verbose output")
 	cmd.Flags().StringVarP(&o.kubeconfig, clientcmd.RecommendedConfigPathFlag, "k",
 		clientcmd.RecommendedHomeFile, "absolute path to the kubeconfig file")
+	cmd.Flags().String(flags.Context, "", "current kubeconfig context")
+
 	//cmd.Flags().DurationVarP(flags.Timeout, "t", time.Second*30, "time to wait for operations to complete; e.g. 1s, 2m, 3h")
 	//cmd.Flags().Bool(flags.DryRun, false, "do not send requests to the API server")
 	//nolint:errcheck
@@ -71,7 +75,7 @@ func NewUninstallCmd() *cobra.Command {
 }
 
 func (o *uninstallOptions) Run() error {
-	rc, err := clientcmd.BuildConfigFromFlags("", o.kubeconfig)
+	rc, err := buildConfigFromFlags(o.context, o.kubeconfig) //clientcmd.BuildConfigFromFlags("", o.kubeconfig)
 	if err != nil {
 		return err
 	}
@@ -179,4 +183,12 @@ func (o *uninstallOptions) deleteCRDs(rc *rest.Config) error {
 	}
 
 	return patchAndDeleteCRDs(cli, false, crds)
+}
+
+func buildConfigFromFlags(context, kubeconfigPath string) (*rest.Config, error) {
+	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath},
+		&clientcmd.ConfigOverrides{
+			CurrentContext: context,
+		}).ClientConfig()
 }

@@ -11,4 +11,5 @@ const (
 	HttpProxy        = "http-proxy"
 	HttpsProxy       = "https-proxy"
 	NoProxy          = "no-proxy"
+	Context          = "context"
 )

@@ -10,6 +10,7 @@ import (
 	"github.com/krateoplatformops/krateo/pkg/log"
 	"github.com/krateoplatformops/krateo/pkg/platform"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/flowcontrol"
 )
@@ -37,7 +38,9 @@ func NewInitCmd() *cobra.Command {
 			o.HttpsProxy, _ = cmd.Flags().GetString(flags.HttpsProxy)
 			o.NoProxy, _ = cmd.Flags().GetString(flags.NoProxy)
 
-			o.Config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+			context, _ := cmd.Flags().GetString(flags.Context)
+
+			o.Config, err = buildConfigFromFlags(context, kubeconfig) // clientcmd.BuildConfigFromFlags("", kubeconfig)
 			if err != nil {
 				return err
 			}
@@ -78,6 +81,15 @@ func NewInitCmd() *cobra.Command {
 	cmd.Flags().String(flags.HttpProxy, os.Getenv("HTTP_PROXY"), "use the specified HTTP proxy")
 	cmd.Flags().String(flags.HttpsProxy, os.Getenv("HTTPS_PROXY"), "use the specified HTTPS proxy")
 	cmd.Flags().String(flags.NoProxy, os.Getenv("NO_PROXY"), "comma-separated list of hosts and domains which do not use the proxy")
+	cmd.Flags().String(flags.Context, "", "current kubeconfig context")
 
 	return cmd
+}
+
+func buildConfigFromFlags(context, kubeconfigPath string) (*rest.Config, error) {
+	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath},
+		&clientcmd.ConfigOverrides{
+			CurrentContext: context,
+		}).ClientConfig()
 }
