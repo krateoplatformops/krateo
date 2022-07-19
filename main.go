@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/krateoplatformops/krateo/cmd"
-	"github.com/krateoplatformops/krateo/pkg/log"
+	"github.com/krateoplatformops/krateo/internal/log"
 )
 
 // Build information. Populated at build-time.

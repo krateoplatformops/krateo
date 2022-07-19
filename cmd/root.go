@@ -4,11 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	initialize "github.com/krateoplatformops/krateo/cmd/init"
-	"github.com/krateoplatformops/krateo/cmd/install"
-	"github.com/krateoplatformops/krateo/cmd/uninstall"
-	"github.com/krateoplatformops/krateo/cmd/version"
-	"github.com/krateoplatformops/krateo/pkg/osutils"
+	"github.com/krateoplatformops/krateo/internal/osutils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -42,12 +38,9 @@ func KrateoCtl(ver, build string) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(version.NewCmdVersion(ver, build))
-	cmd.AddCommand(initialize.NewInitCmd())
-	cmd.AddCommand(install.NewInstallCmd())
-	cmd.AddCommand(uninstall.NewUninstallCmd())
-	//TODO cmd.AddCommand(config.NewConfigCmd())
-	//TODO cmd.AddCommand(license.NewLicenseCmd())
+	cmd.AddCommand(newCmdVersion(ver, build))
+	cmd.AddCommand(newInitCmd())
+	cmd.AddCommand(newUninstallCmd())
 
 	return cmd
 }
