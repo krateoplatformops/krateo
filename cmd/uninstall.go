@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/krateoplatformops/krateo/internal/core"
+	"github.com/krateoplatformops/krateo/internal/crds"
 	"github.com/krateoplatformops/krateo/internal/crossplane"
+	"github.com/krateoplatformops/krateo/internal/crossplane/composite"
 	"github.com/krateoplatformops/krateo/internal/crossplane/configurations"
 	"github.com/krateoplatformops/krateo/internal/crossplane/controllerconfigs"
 	"github.com/krateoplatformops/krateo/internal/crossplane/providers"
@@ -117,6 +119,12 @@ func (o *uninstallOpts) run() error {
 	if err := o.uninstallCrossplane(ctx); err != nil {
 		return err
 	}
+
+	o.bus.Publish(events.NewStartWaitEvent("finishing cleaning..."))
+	o.deletComposites(ctx)
+
+	o.deleteCRDsQuietly(ctx)
+	o.bus.Publish(events.NewStartWaitEvent("cleaning done"))
 
 	return nil
 }
@@ -282,4 +290,43 @@ func (o *uninstallOpts) uninstallModules(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (o *uninstallOpts) deletComposites(ctx context.Context) {
+	all, err := composite.List(ctx, o.restConfig)
+	if err != nil {
+		return
+	}
+
+	if o.verbose {
+		o.bus.Publish(events.NewDebugEvent("found [%d] composites\n", len(all)))
+	}
+
+	for _, el := range all {
+		if o.verbose {
+			o.bus.Publish(events.NewDebugEvent(" > %s\n", el.GetName()))
+		}
+
+		_ = core.Delete(ctx, core.DeleteOpts{
+			RESTConfig: o.restConfig,
+			Object:     &el,
+		})
+	}
+}
+
+func (o *uninstallOpts) deleteCRDsQuietly(ctx context.Context) {
+	items, err := crds.Instances(ctx, o.restConfig)
+	if err == nil {
+		for _, el := range items {
+			_ = crds.PatchAndDelete(ctx, o.restConfig, &el)
+		}
+	}
+
+	items, err = crds.List(ctx, crds.ListOpts{RESTConfig: o.restConfig})
+	if err == nil {
+
+		for _, el := range items {
+			_ = crds.PatchAndDelete(ctx, o.restConfig, &el)
+		}
+	}
 }
