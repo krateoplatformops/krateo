@@ -1,4 +1,4 @@
-package compositions
+package core
 
 import (
 	"context"
@@ -6,33 +6,33 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
-type DeleteOpts struct {
+type PatchOpts struct {
 	RESTConfig *rest.Config
+	PatchData  []byte
+	GVR        schema.GroupVersionResource
 	Name       string
 }
 
-func Delete(ctx context.Context, opts DeleteOpts) (err error) {
-	gvr := schema.GroupVersionResource{
-		Group:    "apiextensions.crossplane.io",
-		Version:  "v1",
-		Resource: "compositions",
-	}
-
+func Patch(ctx context.Context, opts PatchOpts) error {
 	dc, err := dynamic.NewForConfig(opts.RESTConfig)
 	if err != nil {
 		return err
 	}
 
-	err = dc.Resource(gvr).Delete(ctx, opts.Name, metav1.DeleteOptions{})
+	_, err = dc.Resource(opts.GVR).
+		Patch(ctx, opts.Name, types.MergePatchType, opts.PatchData, metav1.PatchOptions{
+			FieldManager: InstalledByValue,
+		})
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
 	}
 
-	return err
+	return nil
 }

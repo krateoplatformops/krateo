@@ -5,14 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/krateoplatformops/krateo/internal/compositions"
-	"github.com/krateoplatformops/krateo/internal/controllerconfigs"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/krateoplatformops/krateo/internal/crossplane"
+	"github.com/krateoplatformops/krateo/internal/crossplane/compositions"
+	"github.com/krateoplatformops/krateo/internal/crossplane/controllerconfigs"
+	"github.com/krateoplatformops/krateo/internal/crossplane/providers"
 	"github.com/krateoplatformops/krateo/internal/eventbus"
 	"github.com/krateoplatformops/krateo/internal/events"
 	"github.com/krateoplatformops/krateo/internal/log"
-	"github.com/krateoplatformops/krateo/internal/providers"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -154,7 +154,7 @@ func (o *uninstallOpts) uninstallCrossplane(ctx context.Context) error {
 }
 
 func (o *uninstallOpts) uninstallPackages(ctx context.Context) error {
-	all, err := providers.ListAll(ctx, o.restConfig)
+	all, err := providers.All(ctx, o.restConfig)
 	if err != nil {
 		return err
 	}

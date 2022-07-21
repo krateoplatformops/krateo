@@ -28,11 +28,24 @@ func ListInstalled(ctx context.Context, restConfig *rest.Config) ([]unstructured
 	})
 }
 
-func ListAll(ctx context.Context, restConfig *rest.Config) ([]unstructured.Unstructured, error) {
+func All(ctx context.Context, restConfig *rest.Config) ([]unstructured.Unstructured, error) {
 	gvr := schema.GroupVersionResource{
 		Group:    "pkg.crossplane.io",
 		Version:  "v1",
 		Resource: "providers",
+	}
+
+	return core.List(ctx, core.ListOpts{
+		RESTConfig: restConfig,
+		GVR:        gvr,
+	})
+}
+
+func GetConfigurations(ctx context.Context, restConfig *rest.Config) ([]unstructured.Unstructured, error) {
+	gvr := schema.GroupVersionResource{
+		Group:    "pkg.crossplane.io",
+		Version:  "v1",
+		Resource: "configurations",
 	}
 
 	return core.List(ctx, core.ListOpts{

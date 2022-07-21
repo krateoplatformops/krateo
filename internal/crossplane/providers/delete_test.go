@@ -13,18 +13,23 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func TestListAll(t *testing.T) {
+func TestDelete(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	all, err := ListAll(context.TODO(), restConfig)
+	all, err := GetConfigurations(context.TODO(), restConfig)
 	assert.Nil(t, err, "expecting nil error listing providers")
 
 	t.Logf("found [%d] providers\n", len(all))
 	for _, el := range all {
 		t.Logf("> %s\n", el.GetName())
+		err := Delete(context.TODO(), DeleteOpts{
+			RESTConfig: restConfig,
+			Object:     &el,
+		})
+		assert.Nil(t, err, "expecting nil error deleting provider: %s", el.GetName())
 	}
 }

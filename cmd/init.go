@@ -11,10 +11,10 @@ import (
 	"github.com/krateoplatformops/krateo/internal/clusterrolebindings"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/krateoplatformops/krateo/internal/crossplane"
+	"github.com/krateoplatformops/krateo/internal/crossplane/providers"
 	"github.com/krateoplatformops/krateo/internal/eventbus"
 	"github.com/krateoplatformops/krateo/internal/events"
 	"github.com/krateoplatformops/krateo/internal/log"
-	"github.com/krateoplatformops/krateo/internal/providers"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -165,6 +165,9 @@ func (o *initOpts) installPackages(ctx context.Context) error {
 			RESTConfig: o.restConfig,
 			Info:       &el,
 			Namespace:  o.namespace,
+			HttpProxy:  o.httpProxy,
+			HttpsProxy: o.httpsProxy,
+			NoProxy:    o.noProxy,
 		})
 		if err != nil {
 			return fmt.Errorf("installing package '%s': %w", el.Name, err)

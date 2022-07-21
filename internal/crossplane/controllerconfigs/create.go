@@ -14,9 +14,27 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+type EnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// DeepCopy is a deepcopy function, copying the receiver, creating a new EnvVar.
+func (in *EnvVar) DeepCopy() *EnvVar {
+	if in == nil {
+		return nil
+	}
+	out := new(EnvVar)
+	*out = *in
+	return out
+}
+
 type CreateOpts struct {
 	RESTConfig *rest.Config
 	Info       *catalog.PackageInfo
+	HttpProxy  string
+	HttpsProxy string
+	NoProxy    string
 }
 
 func Create(ctx context.Context, opts CreateOpts) (*unstructured.Unstructured, error) {
@@ -26,21 +44,40 @@ func Create(ctx context.Context, opts CreateOpts) (*unstructured.Unstructured, e
 		Resource: "controllerconfigs",
 	}
 
-	obj := &unstructured.Unstructured{}
+	obj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"spec": map[string]interface{}{
+				"securityContext":    map[string]interface{}{},
+				"podSecurityContext": map[string]interface{}{},
+				"metadata": map[string]interface{}{
+					"labels": map[string]interface{}{
+						core.InstalledByLabel: core.InstalledByValue,
+						core.PackageNameLabel: opts.Info.Name,
+					},
+				},
+				"env": []interface{}{
+					map[string]string{
+						"name":  "HTTP_PROXY",
+						"value": opts.HttpProxy,
+					},
+					map[string]string{
+						"name":  "HTTPS_PROXY",
+						"value": opts.HttpsProxy,
+					},
+					map[string]string{
+						"name":  "NO_PROXY",
+						"value": opts.NoProxy,
+					},
+				},
+			},
+		},
+	}
 	obj.SetKind("ControllerConfig")
 	obj.SetAPIVersion("pkg.crossplane.io/v1alpha1")
 	obj.SetName(fmt.Sprintf("%s-controllerconfig", opts.Info.Name))
 	obj.SetLabels(map[string]string{
 		core.InstalledByLabel: core.InstalledByValue,
 	})
-	unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "securityContext")
-	unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "podSecurityContext")
-
-	labelsForController := map[string]interface{}{
-		core.InstalledByLabel: core.InstalledByValue,
-		core.PackageNameLabel: opts.Info.Name,
-	}
-	unstructured.SetNestedField(obj.Object, labelsForController, "spec", "metadata", "labels")
 
 	// prepare the dynamic client
 	dc, err := dynamic.NewForConfig(opts.RESTConfig)

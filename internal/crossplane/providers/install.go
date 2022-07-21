@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/krateoplatformops/krateo/internal/catalog"
-	"github.com/krateoplatformops/krateo/internal/controllerconfigs"
 	"github.com/krateoplatformops/krateo/internal/core"
+	"github.com/krateoplatformops/krateo/internal/crossplane/controllerconfigs"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -21,6 +21,9 @@ type InstallOpts struct {
 	RESTConfig *rest.Config
 	Info       *catalog.PackageInfo
 	Namespace  string
+	HttpProxy  string
+	HttpsProxy string
+	NoProxy    string
 }
 
 func Install(ctx context.Context, opts InstallOpts) error {
@@ -44,6 +47,9 @@ func Install(ctx context.Context, opts InstallOpts) error {
 	ccf, err := controllerconfigs.Create(context.TODO(), controllerconfigs.CreateOpts{
 		Info:       opts.Info,
 		RESTConfig: opts.RESTConfig,
+		HttpProxy:  opts.HttpProxy,
+		HttpsProxy: opts.HttpsProxy,
+		NoProxy:    opts.NoProxy,
 	})
 	if err != nil {
 		return err
