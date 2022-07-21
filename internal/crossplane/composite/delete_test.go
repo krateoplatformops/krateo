@@ -1,7 +1,4 @@
-//go:build integration
-// +build integration
-
-package providers
+package composite
 
 import (
 	"context"
@@ -13,7 +10,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func TestList(t *testing.T) {
+func TestDelete(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
@@ -21,10 +18,15 @@ func TestList(t *testing.T) {
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
 	all, err := List(context.TODO(), restConfig)
-	assert.Nil(t, err, "expecting nil error listing providers")
+	assert.Nil(t, err, "expecting nil error listing composite")
 
-	t.Logf("found [%d] providers\n", len(all))
+	t.Logf("found [%d] composite\n", len(all))
 	for _, el := range all {
-		t.Logf("> %s\n", el.GetName())
+		t.Logf("deleting: %s\n", el.GetName())
+		err := core.Delete(context.TODO(), core.DeleteOpts{
+			RESTConfig: restConfig,
+			Object:     &el,
+		})
+		assert.Nil(t, err, "expecting nil error deleting composite: %s", el.GetName())
 	}
 }

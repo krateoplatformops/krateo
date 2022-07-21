@@ -20,13 +20,13 @@ func TestDelete(t *testing.T) {
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	all, err := GetConfigurations(context.TODO(), restConfig)
+	all, err := List(context.TODO(), restConfig)
 	assert.Nil(t, err, "expecting nil error listing providers")
 
 	t.Logf("found [%d] providers\n", len(all))
 	for _, el := range all {
 		t.Logf("> %s\n", el.GetName())
-		err := Delete(context.TODO(), DeleteOpts{
+		err := core.Delete(context.TODO(), core.DeleteOpts{
 			RESTConfig: restConfig,
 			Object:     &el,
 		})

@@ -196,3 +196,29 @@ func ListByAPIResource(ctx context.Context, opts ListByAPIResourceOpts) ([]unstr
 
 	return items, nil
 }
+
+type GetByAPIResourceOpts struct {
+	RESTConfig  *rest.Config
+	APIResource APIResource
+	Name        string
+	Namespace   string
+}
+
+// GetByAPIResource returns an object that matches the provided name & options on the server.
+func GetByAPIResource(ctx context.Context, opts GetByAPIResourceOpts) (*unstructured.Unstructured, error) {
+	dynamicClient, err := dynamic.NewForConfig(opts.RESTConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	gvr := opts.APIResource.GroupVersionResource()
+
+	var ri dynamic.ResourceInterface
+	if opts.APIResource.Namespaced {
+		ri = dynamicClient.Resource(gvr).Namespace(opts.Namespace)
+	} else {
+		ri = dynamicClient.Resource(gvr)
+	}
+
+	return ri.Get(ctx, opts.Name, metav1.GetOptions{})
+}

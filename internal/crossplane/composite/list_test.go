@@ -1,4 +1,7 @@
-package compositions
+//go:build integration
+// +build integration
+
+package composite
 
 import (
 	"context"
@@ -10,17 +13,17 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func TestDelete(t *testing.T) {
+func TestList(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	err = Delete(context.TODO(), DeleteOpts{
-		RESTConfig:      restConfig,
-		PatchFinalizers: true,
-		Name:            "core.modules.krateo.io",
-	})
-	assert.Nil(t, err, "expecting nil error deleting composition")
+	all, err := List(context.TODO(), restConfig)
+	assert.Nil(t, err, "expecting nil error listing configurations")
+
+	for _, el := range all {
+		t.Logf("> %s\n", el.GetName())
+	}
 }

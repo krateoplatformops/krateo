@@ -1,7 +1,7 @@
 //go:build integration
 // +build integration
 
-package compositions
+package configurations
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func TestList(t *testing.T) {
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
 	all, err := List(context.TODO(), restConfig)
-	assert.Nil(t, err, "expecting nil error listing compositions")
+	assert.Nil(t, err, "expecting nil error listing configurations")
 
 	for _, el := range all {
 		t.Logf("> %s\n", el.GetName())

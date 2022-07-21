@@ -1,7 +1,9 @@
-package compositions
+//go:build integration
+// +build integration
+
+package crossplane
 
 import (
-	"context"
 	"io/ioutil"
 	"testing"
 
@@ -10,17 +12,16 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func TestDelete(t *testing.T) {
+func TestUninstall(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	err = Delete(context.TODO(), DeleteOpts{
-		RESTConfig:      restConfig,
-		PatchFinalizers: true,
-		Name:            "core.modules.krateo.io",
+	err = Uninstall(UninstallOpts{
+		RESTConfig: restConfig,
+		Namespace:  "default",
 	})
-	assert.Nil(t, err, "expecting nil error deleting composition")
+	assert.Nil(t, err, "expecting nil error uninstalling crossplane")
 }

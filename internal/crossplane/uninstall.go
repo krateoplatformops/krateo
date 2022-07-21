@@ -9,14 +9,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type UninstallOptions struct {
+type UninstallOpts struct {
 	RESTConfig *rest.Config
 	Namespace  string
 	Verbose    bool
 	EventBus   eventbus.Bus
 }
 
-func Uninstall(opts UninstallOptions) error {
+func Uninstall(opts UninstallOpts) error {
 	return helm.Uninstall(helm.UninstallOptions{
 		RESTConfig:  opts.RESTConfig,
 		Namespace:   opts.Namespace,

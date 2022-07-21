@@ -34,7 +34,7 @@ func TestListByAPIResource(t *testing.T) {
 
 	res, err := ResolveAPIResource(ResolveAPIResourceOpts{
 		RESTConfig: restConfig,
-		Query:      "providers",
+		Query:      "customresourcedefinitions",
 	})
 	assert.Nil(t, err, "expecting nil error resolving API resource")
 

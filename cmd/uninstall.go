@@ -138,7 +138,7 @@ func (o *uninstallOpts) uninstallCrossplane(ctx context.Context) error {
 
 	o.bus.Publish(events.NewStartWaitEvent("uninstalling crossplane %s...", crossplane.ChartVersion))
 
-	err = crossplane.Uninstall(crossplane.UninstallOptions{
+	err = crossplane.Uninstall(crossplane.UninstallOpts{
 		RESTConfig: o.restConfig,
 		EventBus:   o.bus,
 		Namespace:  o.namespace,

@@ -1,4 +1,4 @@
-package providers
+package configurations
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 func List(ctx context.Context, restConfig *rest.Config) ([]unstructured.Unstructured, error) {
 	res, err := core.ResolveAPIResource(core.ResolveAPIResourceOpts{
 		RESTConfig: restConfig,
-		Query:      "providers",
+		Query:      "configurations",
 	})
 	if err != nil {
 		return nil, err

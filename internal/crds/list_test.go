@@ -1,7 +1,7 @@
 //go:build integration
 // +build integration
 
-package crossplane
+package crds
 
 import (
 	"context"
@@ -13,31 +13,41 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func TestInstall(t *testing.T) {
+func TestList(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	err = Install(context.TODO(), InstallOpts{
-		RESTConfig: restConfig,
-		Namespace:  "default",
-	})
-	assert.Nil(t, err, "expecting nil error installing crossplane")
+	items, err := Instances(context.TODO(), restConfig)
+	assert.Nil(t, err, "expecting nil error listing compositions")
+
+	for _, el := range items {
+		t.Logf("  > %s\n", el.GetName())
+	}
 }
 
-func TestCrossplaneExists(t *testing.T) {
+func TestGet(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	ok, err := Exists(context.TODO(), ExistOpts{
+	res, err := core.ResolveAPIResource(core.ResolveAPIResourceOpts{
 		RESTConfig: restConfig,
-		Namespace:  core.DefaultNamespace,
+		Query:      "mongodb.core.modules.krateo.io",
 	})
-	assert.Nil(t, err, "expecting nil error checking for crossplane existence")
-	assert.True(t, ok, "expecting true checking for crossplane existence")
+
+	items, err := core.ListByAPIResource(context.TODO(), core.ListByAPIResourceOpts{
+		RESTConfig:  restConfig,
+		APIResource: *res,
+	})
+
+	assert.Nil(t, err, "expecting nil error listing crds")
+	for _, el := range items {
+		t.Logf("> %s\n", el.GetName())
+	}
+
 }
