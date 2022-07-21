@@ -44,6 +44,28 @@ func Create(ctx context.Context, opts CreateOpts) (*unstructured.Unstructured, e
 		Resource: "controllerconfigs",
 	}
 
+	envVars := []interface{}{}
+	if opts.HttpProxy != "" {
+		envVars = append(envVars, map[string]string{
+			"name":  "HTTP_PROXY",
+			"value": opts.HttpProxy,
+		})
+	}
+
+	if opts.HttpsProxy != "" {
+		envVars = append(envVars, map[string]string{
+			"name":  "HTTPS_PROXY",
+			"value": opts.HttpsProxy,
+		})
+	}
+
+	if opts.NoProxy != "" {
+		envVars = append(envVars, map[string]string{
+			"name":  "NO_PROXY",
+			"value": opts.NoProxy,
+		})
+	}
+
 	obj := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"spec": map[string]interface{}{
@@ -55,23 +77,11 @@ func Create(ctx context.Context, opts CreateOpts) (*unstructured.Unstructured, e
 						core.PackageNameLabel: opts.Info.Name,
 					},
 				},
-				"env": []interface{}{
-					map[string]string{
-						"name":  "HTTP_PROXY",
-						"value": opts.HttpProxy,
-					},
-					map[string]string{
-						"name":  "HTTPS_PROXY",
-						"value": opts.HttpsProxy,
-					},
-					map[string]string{
-						"name":  "NO_PROXY",
-						"value": opts.NoProxy,
-					},
-				},
+				"env": envVars,
 			},
 		},
 	}
+
 	obj.SetKind("ControllerConfig")
 	obj.SetAPIVersion("pkg.crossplane.io/v1alpha1")
 	obj.SetName(fmt.Sprintf("%s-controllerconfig", opts.Info.Name))
