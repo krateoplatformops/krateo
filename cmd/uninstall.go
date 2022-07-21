@@ -7,7 +7,7 @@ import (
 
 	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/krateoplatformops/krateo/internal/crossplane"
-	"github.com/krateoplatformops/krateo/internal/crossplane/compositions"
+	"github.com/krateoplatformops/krateo/internal/crossplane/configurations"
 	"github.com/krateoplatformops/krateo/internal/crossplane/controllerconfigs"
 	"github.com/krateoplatformops/krateo/internal/crossplane/providers"
 	"github.com/krateoplatformops/krateo/internal/eventbus"
@@ -102,7 +102,7 @@ func (o *uninstallOpts) complete() (err error) {
 func (o *uninstallOpts) run() error {
 	ctx := context.TODO()
 
-	if err := o.uninstallCompositions(ctx); err != nil {
+	if err := o.uninstallModules(ctx); err != nil {
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (o *uninstallOpts) uninstallCrossplane(ctx context.Context) error {
 }
 
 func (o *uninstallOpts) uninstallPackages(ctx context.Context) error {
-	all, err := providers.All(ctx, o.restConfig)
+	all, err := providers.List(ctx, o.restConfig)
 	if err != nil {
 		return err
 	}
@@ -236,14 +236,14 @@ func (o *uninstallOpts) uninstallControllerConfigs(ctx context.Context) error {
 	return nil
 }
 
-func (o *uninstallOpts) uninstallCompositions(ctx context.Context) error {
-	all, err := compositions.List(ctx, o.restConfig)
+func (o *uninstallOpts) uninstallModules(ctx context.Context) error {
+	all, err := configurations.List(ctx, o.restConfig)
 	if err != nil {
 		return err
 	}
 
 	if o.verbose {
-		o.bus.Publish(events.NewDebugEvent("found [%d] compositions", len(all)))
+		o.bus.Publish(events.NewDebugEvent("found [%d] modules", len(all)))
 	}
 
 	if len(all) == 0 {
@@ -251,7 +251,7 @@ func (o *uninstallOpts) uninstallCompositions(ctx context.Context) error {
 	}
 
 	for _, el := range all {
-		o.bus.Publish(events.NewStartWaitEvent("uninstalling composition %s...", el.GetName()))
+		o.bus.Publish(events.NewStartWaitEvent("uninstalling module %s...", el.GetName()))
 		err := core.Delete(ctx, core.DeleteOpts{
 			RESTConfig: o.restConfig,
 			Object:     &el,
@@ -278,7 +278,7 @@ func (o *uninstallOpts) uninstallCompositions(ctx context.Context) error {
 				return err
 			}
 		*/
-		o.bus.Publish(events.NewDoneEvent("composition %s uninstalled", el.GetName()))
+		o.bus.Publish(events.NewDoneEvent("module %s uninstalled", el.GetName()))
 	}
 
 	return nil
