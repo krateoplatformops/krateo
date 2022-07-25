@@ -36,9 +36,9 @@ func TestCreateNamespace(t *testing.T) {
 
 	err = core.Create(context.TODO(), core.CreateOpts{
 		RESTConfig: restConfig,
-		GVR: schema.GroupVersionResource{
-			Version:  "v1",
-			Resource: "namespaces",
+		GVK: schema.GroupVersionKind{
+			Version: "v1",
+			Kind:    "Namespace",
 		},
 		Object: obj,
 	})

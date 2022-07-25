@@ -5,20 +5,17 @@ import (
 
 	"github.com/krateoplatformops/krateo/internal/core"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 )
 
 func List(ctx context.Context, restConfig *rest.Config) ([]unstructured.Unstructured, error) {
-	res, err := core.ResolveAPIResource(core.ResolveAPIResourceOpts{
+	return core.List(ctx, core.ListOpts{
 		RESTConfig: restConfig,
-		Query:      "providers",
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return core.ListByAPIResource(ctx, core.ListByAPIResourceOpts{
-		RESTConfig:  restConfig,
-		APIResource: *res,
+		GVK: schema.GroupVersionKind{
+			Group:   "pkg.crossplane.io",
+			Version: "v1",
+			Kind:    "Provider",
+		},
 	})
 }

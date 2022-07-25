@@ -22,9 +22,9 @@ func Exists(ctx context.Context, opts ExistOpts) (bool, error) {
 
 	list, err := core.List(ctx, core.ListOpts{
 		RESTConfig: opts.RESTConfig,
-		GVR: schema.GroupVersionResource{
-			Version:  "v1",
-			Resource: "pods",
+		GVK: schema.GroupVersionKind{
+			Version: "v1",
+			Kind:    "Pod",
 		},
 		Namespace:     opts.Namespace,
 		LabelSelector: sel.String(),

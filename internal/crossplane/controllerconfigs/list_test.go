@@ -25,10 +25,10 @@ func TestList(t *testing.T) {
 	//assert.Nil(t, err, "expecting nil error creating labels selector")
 
 	opts := core.ListOpts{
-		GVR: schema.GroupVersionResource{
-			Group:    "pkg.crossplane.io",
-			Version:  "v1alpha1",
-			Resource: "controllerconfigs",
+		GVK: schema.GroupVersionKind{
+			Group:   "pkg.crossplane.io",
+			Version: "v1alpha1",
+			Kind:    "Controllerconfig",
 		},
 		RESTConfig: restConfig,
 		//LabelSelector: sel.String(),

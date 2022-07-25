@@ -26,9 +26,9 @@ func TestCreate(t *testing.T) {
 
 	all, err := core.List(context.TODO(), core.ListOpts{
 		RESTConfig: restConfig,
-		GVR: schema.GroupVersionResource{
-			Version:  "v1",
-			Resource: "serviceaccounts",
+		GVK: schema.GroupVersionKind{
+			Version: "v1",
+			Kind:    "Serviceaccount",
 		},
 		Namespace: core.DefaultNamespace,
 	})

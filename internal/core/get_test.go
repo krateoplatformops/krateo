@@ -25,10 +25,10 @@ func TestGetCRDs(t *testing.T) {
 
 	res, err := Get(context.TODO(), GetOpts{
 		RESTConfig: restConfig,
-		GVR: schema.GroupVersionResource{
-			Group:    "apiextensions.k8s.io",
-			Version:  "v1",
-			Resource: "customresourcedefinitions",
+		GVK: schema.GroupVersionKind{
+			Group:   "apiextensions.k8s.io",
+			Version: "v1",
+			Kind:    "CustomResourceDefinitions",
 		},
 		Name: "controllerconfigs.pkg.crossplane.io",
 	})

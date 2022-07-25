@@ -184,9 +184,9 @@ func (o *initOpts) installPackages(ctx context.Context) error {
 func (o *initOpts) createClusterRoleBindings(ctx context.Context) error {
 	all, err := core.List(context.TODO(), core.ListOpts{
 		RESTConfig: o.restConfig,
-		GVR: schema.GroupVersionResource{
-			Version:  "v1",
-			Resource: "serviceaccounts",
+		GVK: schema.GroupVersionKind{
+			Version: "v1",
+			Kind:    "Serviceaccount",
 		},
 		Namespace: o.namespace,
 	})

@@ -103,9 +103,9 @@ func createNamespaceEventually(ctx context.Context, restConfig *rest.Config, nam
 
 	return core.Create(ctx, core.CreateOpts{
 		RESTConfig: restConfig,
-		GVR: schema.GroupVersionResource{
-			Version:  "v1",
-			Resource: "namespaces",
+		GVK: schema.GroupVersionKind{
+			Version: "v1",
+			Kind:    "Namespace",
 		},
 		Object: obj,
 	})

@@ -22,10 +22,10 @@ func TestListCRDs(t *testing.T) {
 
 	all, err := List(context.TODO(), ListOpts{
 		RESTConfig: restConfig,
-		GVR: schema.GroupVersionResource{
-			Group:    "apiextensions.k8s.io",
-			Version:  "v1",
-			Resource: "customresourcedefinitions",
+		GVK: schema.GroupVersionKind{
+			Group:   "apiextensions.k8s.io",
+			Version: "v1",
+			Kind:    "CustomResourceDefinition",
 		},
 	})
 
@@ -53,10 +53,10 @@ func TestJSONPath(t *testing.T) {
 
 	all, err := List(context.TODO(), ListOpts{
 		RESTConfig: restConfig,
-		GVR: schema.GroupVersionResource{
-			Group:    "apiextensions.k8s.io",
-			Version:  "v1",
-			Resource: "customresourcedefinitions",
+		GVK: schema.GroupVersionKind{
+			Group:   "apiextensions.k8s.io",
+			Version: "v1",
+			Kind:    "CustomResourceDefinition",
 		},
 	})
 

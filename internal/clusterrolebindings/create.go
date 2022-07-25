@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
@@ -22,12 +21,6 @@ type CreateOptions struct {
 }
 
 func Create(ctx context.Context, opts CreateOptions) error {
-	gvr := schema.GroupVersionResource{
-		Group:    "rbac.authorization.k8s.io",
-		Version:  "v1",
-		Resource: "clusterrolebindings",
-	}
-
 	crb := rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
@@ -57,12 +50,20 @@ func Create(ctx context.Context, opts CreateOptions) error {
 	obj := unstructured.Unstructured{}
 	obj.SetUnstructuredContent(dat)
 
-	dc, err := dynamic.NewForConfig(opts.RESTConfig)
-	if err != nil {
-		return err
+	gvk := schema.GroupVersionKind{
+		Group:   "rbac.authorization.k8s.io",
+		Version: "v1",
+		Kind:    "ClusterRoleBinding",
 	}
 
-	_, err = dc.Resource(gvr).Create(context.TODO(), &obj, metav1.CreateOptions{})
+	dr, err := core.DynamicForGVR(opts.RESTConfig, gvk, "")
+	if err != nil {
+		if core.IsNoKindMatchError(err) {
+			return nil
+		}
+		return err
+	}
+	_, err = dr.Create(ctx, &obj, metav1.CreateOptions{})
 	if err != nil {
 		if !errors.IsAlreadyExists(err) {
 			return err

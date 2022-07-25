@@ -3,11 +3,10 @@ package core
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
@@ -15,31 +14,28 @@ type FilterFunc func(unstructured.Unstructured) bool
 
 type ListOpts struct {
 	RESTConfig    *rest.Config
-	GVR           schema.GroupVersionResource
+	GVK           schema.GroupVersionKind
 	Namespace     string
 	LabelSelector string
 }
 
 func List(ctx context.Context, opts ListOpts) ([]unstructured.Unstructured, error) {
-	dc, err := dynamic.NewForConfig(opts.RESTConfig)
-	if err != nil {
-		return nil, err
-	}
-
 	listOpts := metav1.ListOptions{}
 	if len(opts.LabelSelector) > 0 {
 		listOpts.LabelSelector = opts.LabelSelector
 	}
 
-	var list *unstructured.UnstructuredList
-	if opts.Namespace == "" {
-		list, err = dc.Resource(opts.GVR).List(ctx, listOpts)
-	} else {
-		list, err = dc.Resource(opts.GVR).Namespace(opts.Namespace).List(ctx, listOpts)
+	dr, err := DynamicForGVR(opts.RESTConfig, opts.GVK, opts.Namespace)
+	if err != nil {
+		if IsNoKindMatchError(err) {
+			return nil, nil
+		}
+		return nil, err
 	}
 
+	list, err := dr.List(ctx, listOpts)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return []unstructured.Unstructured{}, nil
 		}
 		return nil, err
