@@ -47,7 +47,7 @@ go install github.com/krateoplatformops/krateo@latest
 
 ```sh
 krateo init
-krateo install core
+krateo uninstall
 ```
 
 ### Syntax
@@ -69,6 +69,7 @@ Usage: **`krateo init [flags]`** where:
 | `--http-proxy`     | use the specified HTTP proxy                                         | value of `HTTP_PROXY` env var |
 | `--https-proxy`    | use the specified HTTPS proxy                                        | value of `HTTPS_PROXY` env var |
 | `--no-proxy`       | comma-separated list of hosts and domains which do not use the proxy |  value of `NO_PROXY` env var |
+| `-n, --namespace`| namespace where to install krateo runtime | default |
 
 
 Example:
