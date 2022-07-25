@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package core
 
 import (
@@ -13,6 +16,25 @@ import (
 	"k8s.io/client-go/util/jsonpath"
 )
 
+func TestListSelector(t *testing.T) {
+	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
+	assert.Nil(t, err, "expecting nil error loading kubeconfig")
+
+	restConfig, err := RESTConfigFromBytes(kubeconfig)
+	assert.Nil(t, err, "expecting nil error creating rest.Config")
+
+	all, err := List(context.TODO(), ListOpts{
+		RESTConfig: restConfig,
+		GVK: schema.GroupVersionKind{
+			Version: "v1",
+			Kind:    "Pods",
+		},
+		LabelSelector: "app=crossplane",
+	})
+	for _, el := range all {
+		t.Logf("%s\n", el.GetName())
+	}
+}
 func TestListCRDs(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
@@ -28,7 +50,6 @@ func TestListCRDs(t *testing.T) {
 			Kind:    "CustomResourceDefinition",
 		},
 	})
-
 	//res, err := Filter(all, func(obj unstructured.Unstructured) bool {
 	//	return strings.HasSuffix(obj.GetName(), "modules.krateo.io")
 	//})

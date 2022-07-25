@@ -5,10 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/krateoplatformops/krateo/internal/clusterrolebindings"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/krateoplatformops/krateo/internal/crds"
 	"github.com/krateoplatformops/krateo/internal/crossplane"
-	"github.com/krateoplatformops/krateo/internal/crossplane/composite"
+	"github.com/krateoplatformops/krateo/internal/crossplane/compositions"
 	"github.com/krateoplatformops/krateo/internal/crossplane/configurations"
 	"github.com/krateoplatformops/krateo/internal/crossplane/controllerconfigs"
 	"github.com/krateoplatformops/krateo/internal/crossplane/providers"
@@ -73,6 +74,7 @@ func newUninstallCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&o.verbose, "verbose", "v", false, "dump verbose output")
+	cmd.Flags().BoolVar(&o.dryRun, "dry-run", false, "preview the object that would be deleted, without really deleting it")
 	cmd.Flags().StringVar(&o.kubeconfig, clientcmd.RecommendedConfigPathFlag, defaultKubeconfig, "absolute path to the kubeconfig file")
 	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "default", "namespace where to install krateo runtime")
 
@@ -85,6 +87,7 @@ type uninstallOpts struct {
 	restConfig *rest.Config
 	namespace  string
 	verbose    bool
+	dryRun     bool
 }
 
 func (o *uninstallOpts) complete() (err error) {
@@ -104,43 +107,47 @@ func (o *uninstallOpts) complete() (err error) {
 func (o *uninstallOpts) run() error {
 	ctx := context.TODO()
 
-	if err := o.uninstallModules(ctx); err != nil {
+	if err := o.deleteModules(ctx); err != nil {
 		return err
 	}
 
-	if err := o.uninstallPackages(ctx); err != nil {
+	if err := o.deletePackages(ctx); err != nil {
 		return err
 	}
 
-	if err := o.uninstallControllerConfigs(ctx); err != nil {
+	if err := o.deleteControllerConfigs(ctx); err != nil {
 		return err
 	}
 
-	if err := o.uninstallCrossplane(ctx); err != nil {
+	if err := o.deleteCrossplane(ctx); err != nil {
 		return err
 	}
 
 	o.bus.Publish(events.NewStartWaitEvent("finishing cleaning..."))
-	o.deletComposites(ctx)
-
+	o.deletCompositions(ctx)
 	o.deleteCRDsQuietly(ctx)
+	o.deleteClusterRoleBindingsQuietly(ctx)
 	o.bus.Publish(events.NewStartWaitEvent("cleaning done"))
 
 	return nil
 }
 
-func (o *uninstallOpts) uninstallCrossplane(ctx context.Context) error {
-	ok, err := crossplane.Exists(ctx, crossplane.ExistOpts{
-		RESTConfig: o.restConfig,
-		Namespace:  o.namespace,
-	})
+func (o *uninstallOpts) deleteCrossplane(ctx context.Context) error {
+	pod, err := crossplane.GetPOD(ctx, o.restConfig)
 	if err != nil {
 		return err
 	}
-	if !ok {
+	if pod == nil {
 		if o.verbose {
-			o.bus.Publish(events.NewDebugEvent("crossplane not found in namespace '%s'", o.namespace))
+			o.bus.Publish(events.NewDebugEvent("crossplane not found"))
 		}
+		return nil
+	}
+
+	if o.dryRun {
+		o.bus.Publish(events.NewDebugEvent(
+			"found crossplane pod: %s in namespace: %s",
+			pod.GetName(), pod.GetNamespace()))
 		return nil
 	}
 
@@ -149,7 +156,7 @@ func (o *uninstallOpts) uninstallCrossplane(ctx context.Context) error {
 	err = crossplane.Uninstall(crossplane.UninstallOpts{
 		RESTConfig: o.restConfig,
 		EventBus:   o.bus,
-		Namespace:  o.namespace,
+		Namespace:  pod.GetNamespace(),
 		Verbose:    o.verbose,
 	})
 	if err != nil {
@@ -161,22 +168,28 @@ func (o *uninstallOpts) uninstallCrossplane(ctx context.Context) error {
 	return nil
 }
 
-func (o *uninstallOpts) uninstallPackages(ctx context.Context) error {
+func (o *uninstallOpts) deletePackages(ctx context.Context) error {
 	all, err := providers.List(ctx, o.restConfig)
 	if err != nil {
 		return err
-	}
-
-	if o.verbose {
-		o.bus.Publish(events.NewDebugEvent("found [%d] packages", len(all)))
 	}
 
 	if len(all) == 0 {
 		return nil
 	}
 
+	if o.dryRun {
+		o.bus.Publish(events.NewDebugEvent("found [%d] packages", len(all)))
+	}
+
 	for _, el := range all {
+		if o.dryRun {
+			o.bus.Publish(events.NewDebugEvent(" > %s", el.GetName()))
+			continue
+		}
+
 		o.bus.Publish(events.NewStartWaitEvent("uninstalling package %s...", el.GetName()))
+
 		err := core.Delete(ctx, core.DeleteOpts{
 			RESTConfig: o.restConfig,
 			Object:     &el,
@@ -212,25 +225,26 @@ func (o *uninstallOpts) uninstallPackages(ctx context.Context) error {
 	return nil
 }
 
-func (o *uninstallOpts) uninstallControllerConfigs(ctx context.Context) error {
+func (o *uninstallOpts) deleteControllerConfigs(ctx context.Context) error {
 	all, err := controllerconfigs.ListAll(ctx, o.restConfig)
 	if err != nil {
 		return err
-	}
-
-	if o.verbose {
-		o.bus.Publish(events.NewDebugEvent("found [%d] controller configs", len(all)))
 	}
 
 	if len(all) == 0 {
 		return nil
 	}
 
-	o.bus.Publish(events.NewStartWaitEvent("deleting controller configs"))
+	if o.dryRun {
+		o.bus.Publish(events.NewDebugEvent("found [%d] controller configs", len(all)))
+	}
+
 	for _, el := range all {
-		if o.verbose {
+		if o.dryRun {
 			o.bus.Publish(events.NewDebugEvent(" > %s", el.GetName()))
+			continue
 		}
+
 		err := controllerconfigs.Delete(ctx, controllerconfigs.DeleteOpts{
 			RESTConfig: o.restConfig,
 			Name:       el.GetName(),
@@ -239,26 +253,29 @@ func (o *uninstallOpts) uninstallControllerConfigs(ctx context.Context) error {
 			return err
 		}
 	}
-	o.bus.Publish(events.NewDoneEvent("controller configs deleted"))
 
 	return nil
 }
 
-func (o *uninstallOpts) uninstallModules(ctx context.Context) error {
+func (o *uninstallOpts) deleteModules(ctx context.Context) error {
 	all, err := configurations.List(ctx, o.restConfig)
 	if err != nil {
 		return err
 	}
-
-	if o.verbose {
-		o.bus.Publish(events.NewDebugEvent("found [%d] modules", len(all)))
-	}
-
 	if len(all) == 0 {
 		return nil
 	}
 
+	if o.dryRun {
+		o.bus.Publish(events.NewDebugEvent("found [%d] modules", len(all)))
+	}
+
 	for _, el := range all {
+		if o.dryRun {
+			o.bus.Publish(events.NewDebugEvent(" > %s", el.GetName()))
+			continue
+		}
+
 		o.bus.Publish(events.NewStartWaitEvent("uninstalling module %s...", el.GetName()))
 		err := core.Delete(ctx, core.DeleteOpts{
 			RESTConfig: o.restConfig,
@@ -267,46 +284,31 @@ func (o *uninstallOpts) uninstallModules(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-
-		// Start Watching
-		/*
-			err = core.Watch(ctx, core.WatchOpts{
-				RESTConfig: o.restConfig,
-				GVR: schema.GroupVersionResource{
-					Group:    "apiextensions.crossplane.io",
-					Version:  "v1",
-					Resource: "compositions",
-				},
-				Namespace: el.GetNamespace(),
-				StopFunc: func(et watch.EventType, obj *unstructured.Unstructured) (bool, error) {
-					return (obj.GetName() == el.GetName() && et == watch.Deleted), nil
-				},
-			})
-			if err != nil {
-				return err
-			}
-		*/
 		o.bus.Publish(events.NewDoneEvent("module %s uninstalled", el.GetName()))
 	}
 
 	return nil
 }
 
-func (o *uninstallOpts) deletComposites(ctx context.Context) {
-	all, err := composite.List(ctx, o.restConfig)
+func (o *uninstallOpts) deletCompositions(ctx context.Context) {
+	all, err := compositions.List(ctx, o.restConfig)
 	if err != nil {
 		return
 	}
 
-	if o.verbose {
-		o.bus.Publish(events.NewDebugEvent("found [%d] composites\n", len(all)))
+	if len(all) == 0 {
+		return
+	}
+
+	if o.dryRun {
+		o.bus.Publish(events.NewDebugEvent("found [%d] compositions", len(all)))
 	}
 
 	for _, el := range all {
-		if o.verbose {
-			o.bus.Publish(events.NewDebugEvent(" > %s\n", el.GetName()))
+		if o.dryRun {
+			o.bus.Publish(events.NewDebugEvent(" > %s", el.GetName()))
+			continue
 		}
-
 		_ = core.Delete(ctx, core.DeleteOpts{
 			RESTConfig: o.restConfig,
 			Object:     &el,
@@ -315,18 +317,69 @@ func (o *uninstallOpts) deletComposites(ctx context.Context) {
 }
 
 func (o *uninstallOpts) deleteCRDsQuietly(ctx context.Context) {
-	items, err := crds.Instances(ctx, o.restConfig)
+	/*
+		items, err := crds.Instances(ctx, o.restConfig)
+		if err == nil {
+			if tot := len(items); tot > 0 && o.dryRun {
+				o.bus.Publish(events.NewDebugEvent("found [%d] crds", tot))
+			}
+
+			for _, el := range items {
+				if o.dryRun {
+					o.bus.Publish(events.NewDebugEvent(" > %s", el.GetName()))
+					continue
+				}
+
+				crds.PatchAndDelete(ctx, o.restConfig, &el)
+			}
+		}
+	*/
+
+	items, err := crds.List(ctx, crds.ListOpts{RESTConfig: o.restConfig})
 	if err == nil {
+		if tot := len(items); tot > 0 && o.dryRun {
+			o.bus.Publish(events.NewDebugEvent("found [%d] crds", tot))
+		}
+
 		for _, el := range items {
-			_ = crds.PatchAndDelete(ctx, o.restConfig, &el)
+			if o.dryRun {
+				o.bus.Publish(events.NewDebugEvent(" > %s", el.GetName()))
+				continue
+			}
+
+			crds.PatchAndDelete(ctx, o.restConfig, &el)
 		}
 	}
+}
 
-	items, err = crds.List(ctx, crds.ListOpts{RESTConfig: o.restConfig})
-	if err == nil {
+func (o *uninstallOpts) deleteClusterRoleBindingsQuietly(ctx context.Context) {
+	all, err := clusterrolebindings.List(ctx, o.restConfig)
+	if err != nil {
+		return
+	}
 
-		for _, el := range items {
-			_ = crds.PatchAndDelete(ctx, o.restConfig, &el)
+	res, err := core.Filter(all, func(obj unstructured.Unstructured) bool {
+		accept := (obj.GetName() == "provider-helm-admin-binding")
+		accept = accept || (obj.GetName() == "provider-kubernetes-admin-binding")
+		return accept
+	})
+
+	if len(res) == 0 {
+		return
+	}
+
+	if o.dryRun {
+		o.bus.Publish(events.NewDebugEvent("found [%d] cluster role bindings", len(res)))
+	}
+
+	for _, el := range res {
+		if o.dryRun {
+			o.bus.Publish(events.NewDebugEvent("> %s", el.GetName()))
+			continue
 		}
+		_ = clusterrolebindings.Delete(ctx, clusterrolebindings.DeleteOpts{
+			RESTConfig: o.restConfig,
+			Name:       el.GetName(),
+		})
 	}
 }

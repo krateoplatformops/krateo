@@ -28,7 +28,7 @@ func TestList(t *testing.T) {
 		GVK: schema.GroupVersionKind{
 			Group:   "pkg.crossplane.io",
 			Version: "v1alpha1",
-			Kind:    "Controllerconfig",
+			Kind:    "ControllerConfig",
 		},
 		RESTConfig: restConfig,
 		//LabelSelector: sel.String(),

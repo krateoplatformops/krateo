@@ -15,7 +15,7 @@ func ListAll(ctx context.Context, restConfig *rest.Config) ([]unstructured.Unstr
 		GVK: schema.GroupVersionKind{
 			Group:   "pkg.crossplane.io",
 			Version: "v1alpha1",
-			Kind:    "Controllerconfig",
+			Kind:    "ControllerConfig",
 		},
 	})
 }

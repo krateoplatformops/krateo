@@ -2,10 +2,11 @@ package crds
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	"github.com/krateoplatformops/krateo/internal/core"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 )
 
@@ -20,6 +21,9 @@ func List(ctx context.Context, opts ListOpts) ([]unstructured.Unstructured, erro
 		Query:      "customresourcedefinitions",
 	})
 	if err != nil {
+		if core.IsNoKindMatchError(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -28,6 +32,9 @@ func List(ctx context.Context, opts ListOpts) ([]unstructured.Unstructured, erro
 		APIResource: *res,
 	})
 	if err != nil {
+		if core.IsNoKindMatchError(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if opts.FilterFunc == nil {
@@ -38,17 +45,30 @@ func List(ctx context.Context, opts ListOpts) ([]unstructured.Unstructured, erro
 }
 
 func Instances(ctx context.Context, restConfig *rest.Config) ([]unstructured.Unstructured, error) {
-	crds, err := List(ctx, ListOpts{
-		RESTConfig: restConfig,
-		FilterFunc: func(el unstructured.Unstructured) bool {
-			ok := strings.HasSuffix(el.GetName(), "krateo.io")
-			ok = ok || strings.HasSuffix(el.GetName(), "crossplane.io")
-			return ok
-		},
-	})
+	gvk := schema.GroupVersionKind{
+		Group:   "apiextensions.k8s.io",
+		Version: "v1",
+		Kind:    "CustomResourceDefinition",
+	}
+
+	crds, err := core.List(ctx, core.ListOpts{RESTConfig: restConfig, GVK: gvk})
 	if err != nil {
+		if core.IsNoKindMatchError(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
+
+	/*
+		list, err := core.Filter(crds, func(el unstructured.Unstructured) bool {
+			ok := strings.HasSuffix(el.GetAPIVersion(), "krateo.io")
+			ok = ok || strings.HasSuffix(el.GetAPIVersion(), "crossplane.io")
+			return ok
+		})
+		if err != nil {
+			return nil, err
+		}
+	*/
 
 	items := []unstructured.Unstructured{}
 
@@ -58,18 +78,27 @@ func Instances(ctx context.Context, restConfig *rest.Config) ([]unstructured.Uns
 			Query:      el.GetName(),
 		})
 		if err != nil {
+			if core.IsNoKindMatchError(err) {
+				continue
+			}
 			return nil, err
 		}
+		fmt.Println("==> ", api.GroupVersionResource().Resource, api.Group)
 
-		instances, err := core.ListByAPIResource(ctx, core.ListByAPIResourceOpts{
-			RESTConfig:  restConfig,
-			APIResource: *api,
+		res, err := core.List(ctx, core.ListOpts{
+			RESTConfig: restConfig,
+			GVK: schema.GroupVersionKind{
+				Group:   api.Group,
+				Version: api.Version,
+				Kind:    api.Kind,
+			},
+			Namespace: el.GetNamespace(),
 		})
 		if err != nil {
-			return nil, err
+			continue
 		}
 
-		items = append(items, instances...)
+		items = append(items, res...)
 	}
 
 	return items, nil

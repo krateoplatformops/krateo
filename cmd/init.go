@@ -182,11 +182,11 @@ func (o *initOpts) installPackages(ctx context.Context) error {
 }
 
 func (o *initOpts) createClusterRoleBindings(ctx context.Context) error {
-	all, err := core.List(context.TODO(), core.ListOpts{
+	all, err := core.List(ctx, core.ListOpts{
 		RESTConfig: o.restConfig,
 		GVK: schema.GroupVersionKind{
 			Version: "v1",
-			Kind:    "Serviceaccount",
+			Kind:    "ServiceAccount",
 		},
 		Namespace: o.namespace,
 	})
@@ -217,7 +217,7 @@ func (o *initOpts) createClusterRoleBindings(ctx context.Context) error {
 		name := fmt.Sprintf("%s-admin-binding", el.GetName()[0:idx])
 
 		o.bus.Publish(events.NewStartWaitEvent("creating role bindings for %s...", name))
-		err := clusterrolebindings.Create(context.TODO(), clusterrolebindings.CreateOptions{
+		err := clusterrolebindings.Create(ctx, clusterrolebindings.CreateOptions{
 			RESTConfig:       o.restConfig,
 			Name:             name,
 			SubjectName:      el.GetName(),
