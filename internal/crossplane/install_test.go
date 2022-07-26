@@ -6,6 +6,7 @@ package crossplane
 import (
 	"context"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/krateoplatformops/krateo/internal/core"
@@ -27,17 +28,22 @@ func TestInstall(t *testing.T) {
 	assert.Nil(t, err, "expecting nil error installing crossplane")
 }
 
-func TestCrossplaneExists(t *testing.T) {
+func TestGetPOD(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	ok, err := Exists(context.TODO(), ExistOpts{
-		RESTConfig: restConfig,
-		Namespace:  core.DefaultNamespace,
-	})
-	assert.Nil(t, err, "expecting nil error checking for crossplane existence")
-	assert.True(t, ok, "expecting true checking for crossplane existence")
+	pod, err := InstalledPOD(context.TODO(), restConfig)
+	assert.Nil(t, err, "expecting nil error getting crossplane pod")
+
+	if pod != nil && len(pod.Spec.Containers) > 0 {
+		img := pod.Spec.Containers[0].Image
+		t.Logf("%s\n", img)
+		idx := strings.LastIndex(img, ":")
+		if idx != -1 {
+			t.Logf("%s\n", img[idx+1:])
+		}
+	}
 }

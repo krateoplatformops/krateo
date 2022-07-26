@@ -20,7 +20,7 @@ func Uninstall(opts UninstallOpts) error {
 	return helm.Uninstall(helm.UninstallOptions{
 		RESTConfig:  opts.RESTConfig,
 		Namespace:   opts.Namespace,
-		ReleaseName: ChartReleaseName,
+		ReleaseName: chartReleaseName,
 		LogFn: func(format string, v ...interface{}) {
 			if opts.Verbose && opts.EventBus != nil {
 				msg := fmt.Sprintf(format, v...)

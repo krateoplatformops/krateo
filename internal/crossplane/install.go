@@ -1,14 +1,15 @@
 package crossplane
 
 import (
+	"bytes"
 	"context"
-	"embed"
 	"fmt"
 
 	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/krateoplatformops/krateo/internal/eventbus"
 	"github.com/krateoplatformops/krateo/internal/events"
 	"github.com/krateoplatformops/krateo/internal/helm"
+	"github.com/krateoplatformops/krateo/internal/httputils"
 	"github.com/krateoplatformops/krateo/internal/pods"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,17 +19,13 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// https://charts.crossplane.io/stable
 const (
-	ChartVersion     = "1.9.0"
-	ChartReleaseName = "crossplane"
+	chartReleaseName = "crossplane"
 )
-
-//go:embed assets/*
-var assetsFS embed.FS
 
 type InstallOpts struct {
 	RESTConfig *rest.Config
+	ChartURL   string
 	Verbose    bool
 	HttpProxy  string
 	HttpsProxy string
@@ -38,23 +35,22 @@ type InstallOpts struct {
 }
 
 func Install(ctx context.Context, opts InstallOpts) error {
-	err := createNamespaceEventually(ctx, opts.RESTConfig, opts.Namespace)
+	chartArchive := &bytes.Buffer{}
+	err := httputils.Fetch(opts.ChartURL, chartArchive)
+	if err != nil {
+		return err
+	}
+
+	err = createNamespaceEventually(ctx, opts.RESTConfig, opts.Namespace)
 	if err != nil {
 		return fmt.Errorf("creating namespace '%s': %w", opts.Namespace, err)
 	}
 
-	chartArchive := fmt.Sprintf("assets/crossplane-%s.tgz", ChartVersion)
-	fp, err := assetsFS.Open(chartArchive)
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
-
 	helmOpts := helm.InstallOptions{
 		RESTConfig:  opts.RESTConfig,
 		Namespace:   opts.Namespace,
-		ReleaseName: ChartReleaseName,
-		ChartSource: fp,
+		ReleaseName: chartReleaseName,
+		ChartSource: bytes.NewReader(chartArchive.Bytes()),
 		ChartValues: map[string]interface{}{
 			"securityContextCrossplane": map[string]interface{}{
 				"runAsUser":  nil,

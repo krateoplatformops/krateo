@@ -14,6 +14,7 @@ import (
 	"github.com/krateoplatformops/krateo/internal/crossplane/providers"
 	"github.com/krateoplatformops/krateo/internal/eventbus"
 	"github.com/krateoplatformops/krateo/internal/events"
+	"github.com/krateoplatformops/krateo/internal/helm"
 	"github.com/krateoplatformops/krateo/internal/log"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -77,6 +78,10 @@ func newInitCmd() *cobra.Command {
 	return cmd
 }
 
+const (
+	crossplaneHelmIndexURL = "https://charts.crossplane.io/stable/index.yaml"
+)
+
 type initOpts struct {
 	kubeconfig string
 	bus        eventbus.Bus
@@ -121,7 +126,6 @@ func (o *initOpts) run() error {
 }
 
 func (o *initOpts) installCrossplane(ctx context.Context) error {
-	o.bus.Publish(events.NewStartWaitEvent("installing crossplane %s...", crossplane.ChartVersion))
 	ok, err := crossplane.Exists(ctx, crossplane.ExistOpts{
 		RESTConfig: o.restConfig,
 		Namespace:  o.namespace,
@@ -129,14 +133,25 @@ func (o *initOpts) installCrossplane(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
 	if ok {
-		o.bus.Publish(events.NewDoneEvent("crossplane %s installed", crossplane.ChartVersion))
 		return nil
 	}
 
+	idx, err := helm.IndexFromURL(crossplaneHelmIndexURL)
+	if err != nil {
+		return err
+	}
+
+	ver, url, err := helm.LatestVersionAndURL(idx)
+	if err != nil {
+		return err
+	}
+
+	o.bus.Publish(events.NewStartWaitEvent("installing crossplane %s...", ver))
+
 	err = crossplane.Install(ctx, crossplane.InstallOpts{
 		RESTConfig: o.restConfig,
+		ChartURL:   url,
 		Namespace:  o.namespace,
 		EventBus:   o.bus,
 		HttpProxy:  o.httpProxy,
@@ -148,7 +163,7 @@ func (o *initOpts) installCrossplane(ctx context.Context) error {
 		return err
 	}
 
-	o.bus.Publish(events.NewDoneEvent("crossplane %s installed", crossplane.ChartVersion))
+	o.bus.Publish(events.NewDoneEvent("crossplane %s installed", ver))
 
 	return nil
 }

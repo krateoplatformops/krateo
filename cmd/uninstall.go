@@ -140,10 +140,11 @@ func (o *uninstallOpts) run() error {
 }
 
 func (o *uninstallOpts) deleteCrossplane(ctx context.Context) error {
-	pod, err := crossplane.GetPOD(ctx, o.restConfig)
+	pod, err := crossplane.InstalledPOD(ctx, o.restConfig)
 	if err != nil {
 		return err
 	}
+
 	if pod == nil {
 		if o.verbose {
 			o.bus.Publish(events.NewDebugEvent("crossplane not found"))
@@ -151,14 +152,19 @@ func (o *uninstallOpts) deleteCrossplane(ctx context.Context) error {
 		return nil
 	}
 
+	ver, err := crossplane.PODImageVersion(pod)
+	if err != nil {
+		return err
+	}
+
 	if o.dryRun {
 		o.bus.Publish(events.NewDebugEvent(
-			"found crossplane pod: %s in namespace: %s",
-			pod.GetName(), pod.GetNamespace()))
+			"found crossplane (%s) pod: %s in namespace: %s",
+			ver, pod.GetName(), pod.GetNamespace()))
 		return nil
 	}
 
-	o.bus.Publish(events.NewStartWaitEvent("uninstalling crossplane %s...", crossplane.ChartVersion))
+	o.bus.Publish(events.NewStartWaitEvent("uninstalling crossplane %s...", ver))
 
 	err = crossplane.Uninstall(crossplane.UninstallOpts{
 		RESTConfig: o.restConfig,
@@ -170,7 +176,7 @@ func (o *uninstallOpts) deleteCrossplane(ctx context.Context) error {
 		return err
 	}
 
-	o.bus.Publish(events.NewDoneEvent("crossplane %s uninstalled", crossplane.ChartVersion))
+	o.bus.Publish(events.NewDoneEvent("crossplane %s uninstalled", ver))
 
 	return nil
 }
