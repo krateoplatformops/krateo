@@ -93,10 +93,9 @@ type uninstallOpts struct {
 }
 
 func (o *uninstallOpts) complete() (err error) {
-	klog.InitFlags(nil)
 	flag.Set("logtostderr", "false")
-	flag.Set("log_file", "krateo.log")
 	flag.Parse()
+	klog.InitFlags(nil)
 
 	yml, err := ioutil.ReadFile(o.kubeconfig)
 	if err != nil {
