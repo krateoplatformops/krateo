@@ -20,16 +20,8 @@ func TestDelete(t *testing.T) {
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	items, err := Instances(context.TODO(), restConfig)
+	items, err := List(context.TODO(), restConfig)
 	assert.Nil(t, err, "expecting nil error listing compositions")
-
-	for _, el := range items {
-		err = PatchAndDelete(context.TODO(), restConfig, &el)
-		assert.Nil(t, err, "expecting nil error patching an deleting object: ", el.GetName())
-	}
-
-	items, err = List(context.TODO(), ListOpts{RESTConfig: restConfig})
-	assert.Nil(t, err, "expecting nil error listing crds")
 
 	for _, el := range items {
 		err = PatchAndDelete(context.TODO(), restConfig, &el)

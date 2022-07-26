@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"flag"
 	"io/ioutil"
 	"os"
 
@@ -24,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 )
 
 func newUninstallCmd() *cobra.Command {
@@ -91,6 +93,11 @@ type uninstallOpts struct {
 }
 
 func (o *uninstallOpts) complete() (err error) {
+	klog.InitFlags(nil)
+	flag.Set("logtostderr", "false")
+	flag.Set("log_file", "krateo.log")
+	flag.Parse()
+
 	yml, err := ioutil.ReadFile(o.kubeconfig)
 	if err != nil {
 		return err
@@ -317,38 +324,40 @@ func (o *uninstallOpts) deletCompositions(ctx context.Context) {
 }
 
 func (o *uninstallOpts) deleteCRDsQuietly(ctx context.Context) {
-	/*
-		items, err := crds.Instances(ctx, o.restConfig)
-		if err == nil {
-			if tot := len(items); tot > 0 && o.dryRun {
-				o.bus.Publish(events.NewDebugEvent("found [%d] crds", tot))
-			}
+	all, err := crds.List(ctx, o.restConfig)
+	if err != nil || len(all) == 0 {
+		return
+	}
 
-			for _, el := range items {
-				if o.dryRun {
-					o.bus.Publish(events.NewDebugEvent(" > %s", el.GetName()))
-					continue
-				}
-
-				crds.PatchAndDelete(ctx, o.restConfig, &el)
-			}
+	items := []unstructured.Unstructured{}
+	for _, el := range all {
+		res := crds.CRDInstances(ctx, o.restConfig, el.GetName())
+		if res != nil {
+			items = append(items, res...)
 		}
-	*/
+	}
 
-	items, err := crds.List(ctx, crds.ListOpts{RESTConfig: o.restConfig})
-	if err == nil {
-		if tot := len(items); tot > 0 && o.dryRun {
-			o.bus.Publish(events.NewDebugEvent("found [%d] crds", tot))
-		}
-
+	if o.dryRun {
+		o.bus.Publish(events.NewDebugEvent("found [%d] custom resources", len(items)))
 		for _, el := range items {
-			if o.dryRun {
-				o.bus.Publish(events.NewDebugEvent(" > %s", el.GetName()))
-				continue
-			}
-
+			o.bus.Publish(events.NewDebugEvent(" > %s (%s)", el.GetName(), el.GetAPIVersion()))
+		}
+	} else {
+		for _, el := range items {
 			crds.PatchAndDelete(ctx, o.restConfig, &el)
 		}
+	}
+
+	if o.dryRun {
+		o.bus.Publish(events.NewDebugEvent("found [%d] custom resource definitions", len(all)))
+		for _, el := range all {
+			o.bus.Publish(events.NewDebugEvent(" > %s (%s)", el.GetName(), el.GetAPIVersion()))
+		}
+		return
+	}
+
+	for _, el := range all {
+		crds.PatchAndDelete(ctx, o.restConfig, &el)
 	}
 }
 

@@ -2,10 +2,11 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,6 +16,11 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+)
+
+var (
+	ErrCannotResolveResourceType = errors.New("cannot resolve resource type")
+	ErrCannotListByAPIResource   = errors.New("cannot list objects by API resource")
 )
 
 // APIResource represents a Kubernetes API resource.
@@ -94,35 +100,20 @@ func ResolveAPIResource(opts ResolveAPIResourceOpts) (*APIResource, error) {
 	if gvr.Empty() {
 		gvr, err = mapper.ResourceFor(gr.WithVersion(""))
 		if err != nil {
-			if len(gr.Group) == 0 {
-				err = fmt.Errorf("the server doesn't have a resource type \"%s\"", gr.Resource)
-			} else {
-				err = fmt.Errorf("the server doesn't have a resource type \"%s\" in group \"%s\"", gr.Resource, gr.Group)
-			}
-			return nil, err
+			return nil, ErrCannotResolveResourceType
 		}
 	}
 	// Obtain Kind from GVR
 	gvk, err = mapper.KindFor(gvr)
 	if gvk.Empty() {
 		if err != nil {
-			if len(gvr.Group) == 0 {
-				err = fmt.Errorf("the server couldn't identify a kind for resource type \"%s\"", gvr.Resource)
-			} else {
-				err = fmt.Errorf("the server couldn't identify a kind for resource type \"%s\" in group \"%s\"", gvr.Resource, gvr.Group)
-			}
-			return nil, err
+			return nil, ErrCannotResolveResourceType
 		}
 	}
 	// Determine scope of resource
 	mapping, err := mapper.RESTMapping(gvk.GroupKind())
 	if err != nil {
-		if len(gvk.Group) == 0 {
-			err = fmt.Errorf("the server couldn't identify a group kind for resource type \"%s\"", gvk.Kind)
-		} else {
-			err = fmt.Errorf("the server couldn't identify a group kind for resource type \"%s\" in group \"%s\"", gvk.Kind, gvk.Group)
-		}
-		return nil, err
+		return nil, ErrCannotResolveResourceType
 	}
 	// NOTE: This is a rather incomplete APIResource object, but it has enough
 	//       information inside for our use case, which is to fetch API objects
@@ -169,17 +160,12 @@ func ListByAPIResource(ctx context.Context, opts ListByAPIResourceOpts) ([]unstr
 		})
 		if err != nil {
 			switch {
-			case errors.IsForbidden(err):
+			case apierrors.IsForbidden(err):
 				return nil, err
-			case errors.IsNotFound(err):
+			case apierrors.IsNotFound(err):
 				break
 			default:
-				if isClusterScopeRequest {
-					err = fmt.Errorf("failed to list resource type \"%s\" in API group \"%s\" at the cluster scope: %w", opts.APIResource.Name, opts.APIResource.Group, err)
-				} else {
-					err = fmt.Errorf("failed to list resource type \"%s\" in API group \"%s\" in the namespace \"%s\": %w", opts.APIResource.Name, opts.APIResource.Group, opts.Namespace, err)
-				}
-				return nil, err
+				return nil, ErrCannotListByAPIResource
 			}
 		}
 

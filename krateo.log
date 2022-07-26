@@ -1,0 +1,4 @@
+Log file created at: 2022/07/26 11:37:41
+Running on machine: KPDOIT21
+Binary: Built with gc go1.18 for darwin/arm64
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
