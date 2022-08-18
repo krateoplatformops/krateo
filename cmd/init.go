@@ -75,6 +75,7 @@ func newInitCmd() *cobra.Command {
 	cmd.Flags().StringVar(&o.httpsProxy, "https-proxy", os.Getenv("HTTPS_PROXY"), "use the specified HTTPS proxy")
 	cmd.Flags().StringVar(&o.noProxy, "no-proxy", os.Getenv("NO_PROXY"), "comma-separated list of hosts and domains which do not use the proxy")
 	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "default", "namespace where to install krateo runtime")
+	cmd.Flags().BoolVar(&o.noCrossplane, "no-crossplane", false, "do not install crossplane")
 
 	return cmd
 }
@@ -93,6 +94,7 @@ type initOpts struct {
 	httpProxy         string
 	httpsProxy        string
 	noProxy           string
+	noCrossplane      bool
 }
 
 func (o *initOpts) complete() (err error) {
@@ -112,8 +114,10 @@ func (o *initOpts) complete() (err error) {
 func (o *initOpts) run() error {
 	ctx := context.TODO()
 
-	if err := o.installCrossplane(ctx); err != nil {
-		return err
+	if o.noCrossplane == false {
+		if err := o.installCrossplane(ctx); err != nil {
+			return err
+		}
 	}
 
 	if err := o.installPackages(ctx); err != nil {
