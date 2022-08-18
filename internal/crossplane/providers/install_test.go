@@ -21,7 +21,7 @@ func TestInstall(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
-	restConfig, err := core.RESTConfigFromBytes(kubeconfig)
+	restConfig, err := core.RESTConfigFromBytes(kubeconfig, "")
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
 	for _, el := range list.Items {

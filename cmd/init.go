@@ -70,6 +70,7 @@ func newInitCmd() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&o.verbose, "verbose", "v", false, "dump verbose output")
 	cmd.Flags().StringVar(&o.kubeconfig, clientcmd.RecommendedConfigPathFlag, defaultKubeconfig, "absolute path to the kubeconfig file")
+	cmd.Flags().StringVar(&o.kubeconfigContext, "context", "", "kubeconfig context to use")
 	cmd.Flags().StringVar(&o.httpProxy, "http-proxy", os.Getenv("HTTP_PROXY"), "use the specified HTTP proxy")
 	cmd.Flags().StringVar(&o.httpsProxy, "https-proxy", os.Getenv("HTTPS_PROXY"), "use the specified HTTPS proxy")
 	cmd.Flags().StringVar(&o.noProxy, "no-proxy", os.Getenv("NO_PROXY"), "comma-separated list of hosts and domains which do not use the proxy")
@@ -83,14 +84,15 @@ const (
 )
 
 type initOpts struct {
-	kubeconfig string
-	bus        eventbus.Bus
-	restConfig *rest.Config
-	namespace  string
-	verbose    bool
-	httpProxy  string
-	httpsProxy string
-	noProxy    string
+	kubeconfig        string
+	kubeconfigContext string
+	bus               eventbus.Bus
+	restConfig        *rest.Config
+	namespace         string
+	verbose           bool
+	httpProxy         string
+	httpsProxy        string
+	noProxy           string
 }
 
 func (o *initOpts) complete() (err error) {
@@ -99,7 +101,7 @@ func (o *initOpts) complete() (err error) {
 		return err
 	}
 
-	o.restConfig, err = core.RESTConfigFromBytes(yml)
+	o.restConfig, err = core.RESTConfigFromBytes(yml, o.kubeconfigContext)
 	if err != nil {
 		return err
 	}

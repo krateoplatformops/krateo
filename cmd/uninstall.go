@@ -78,18 +78,20 @@ func newUninstallCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&o.verbose, "verbose", "v", false, "dump verbose output")
 	cmd.Flags().BoolVar(&o.dryRun, "dry-run", false, "preview the object that would be deleted, without really deleting it")
 	cmd.Flags().StringVar(&o.kubeconfig, clientcmd.RecommendedConfigPathFlag, defaultKubeconfig, "absolute path to the kubeconfig file")
+	cmd.Flags().StringVar(&o.kubeconfigContext, "context", "", "kubeconfig context to use")
 	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "default", "namespace where to install krateo runtime")
 
 	return cmd
 }
 
 type uninstallOpts struct {
-	kubeconfig string
-	bus        eventbus.Bus
-	restConfig *rest.Config
-	namespace  string
-	verbose    bool
-	dryRun     bool
+	kubeconfig        string
+	kubeconfigContext string
+	bus               eventbus.Bus
+	restConfig        *rest.Config
+	namespace         string
+	verbose           bool
+	dryRun            bool
 }
 
 func (o *uninstallOpts) complete() (err error) {
@@ -102,7 +104,7 @@ func (o *uninstallOpts) complete() (err error) {
 		return err
 	}
 
-	o.restConfig, err = core.RESTConfigFromBytes(yml)
+	o.restConfig, err = core.RESTConfigFromBytes(yml, o.kubeconfigContext)
 	if err != nil {
 		return err
 	}

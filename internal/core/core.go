@@ -24,15 +24,19 @@ var (
 	NoKindMatchError = errors.New("RESTMapper can't find any match for kind")
 )
 
-func RESTConfigFromBytes(data []byte) (*rest.Config, error) {
+func RESTConfigFromBytes(data []byte, withContext string) (*rest.Config, error) {
 	config, err := clientcmd.Load(data)
 	if err != nil {
 		return nil, err
 	}
-	//currentContext := config.CurrentContext
-	//t.Logf("current context: %s", currentContext)
 
-	restConfig, err := clientcmd.NewDefaultClientConfig(*config, nil).ClientConfig()
+	currentContext := config.CurrentContext
+	if len(withContext) > 0 {
+		currentContext = withContext
+	}
+
+	restConfig, err := clientcmd.NewNonInteractiveClientConfig(*config,
+		currentContext, &clientcmd.ConfigOverrides{}, nil).ClientConfig()
 	if err != nil {
 		return nil, err
 	}

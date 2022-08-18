@@ -13,7 +13,7 @@ func TestResolveAPIResource(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
-	restConfig, err := RESTConfigFromBytes(kubeconfig)
+	restConfig, err := RESTConfigFromBytes(kubeconfig, "")
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
 	res, err := ResolveAPIResource(ResolveAPIResourceOpts{
@@ -29,7 +29,7 @@ func TestListByAPIResource(t *testing.T) {
 	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
-	restConfig, err := RESTConfigFromBytes(kubeconfig)
+	restConfig, err := RESTConfigFromBytes(kubeconfig, "")
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
 	res, err := ResolveAPIResource(ResolveAPIResourceOpts{
