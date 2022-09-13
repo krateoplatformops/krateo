@@ -33,7 +33,7 @@ type PullOpts struct {
 	Password   string
 }
 
-func PullSchema(imageURL string, opts PullOpts) (map[string]extv1.JSONSchemaProps, []string, error) {
+func PullXRD(imageURL string, opts PullOpts) (*xpextv1.CompositeResourceDefinition, error) {
 	auth := authn.Anonymous
 	if len(opts.Username) > 0 {
 		auth = &authn.Basic{Username: opts.Username, Password: opts.Password}
@@ -43,24 +43,24 @@ func PullSchema(imageURL string, opts PullOpts) (map[string]extv1.JSONSchemaProp
 
 	img, err := pullImage(imageURL, auth)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	dat, err := extractMultiYAML(img)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return parseMultiYAML(dat, func(xrd *xpextv1.CompositeResourceDefinition) bool {
+	return findXRD(dat, func(xrd *xpextv1.CompositeResourceDefinition) bool {
 		ok := xrd.Spec.Group == moduleApiGroup
 		ok = ok && xrd.Spec.Names.Singular == opts.ModuleName
 		return ok
-	})
+	}), nil
 }
 
 type acceptFunc func(xrd *xpextv1.CompositeResourceDefinition) bool
 
-func parseMultiYAML(dat []byte, accept acceptFunc) (map[string]extv1.JSONSchemaProps, []string, error) {
+func findXRD(dat []byte, accept acceptFunc) (xrd *xpextv1.CompositeResourceDefinition) {
 	sch := runtime.NewScheme()
 	_ = scheme.AddToScheme(sch)
 	_ = xpextv1.AddToScheme(sch)
@@ -81,17 +81,13 @@ func parseMultiYAML(dat []byte, accept acceptFunc) (map[string]extv1.JSONSchemaP
 			continue
 		}
 
-		xrd := obj.(*xpextv1.CompositeResourceDefinition)
+		xrd = obj.(*xpextv1.CompositeResourceDefinition)
 		if !accept(xrd) {
 			continue
 		}
-		//raw := xrd.Spec.Versions[0].Schema.OpenAPIV3Schema
-		vr := xrd.Spec.Versions[0]
-
-		return getProps("spec", vr.Schema)
 	}
 
-	return nil, nil, nil
+	return xrd
 }
 
 func extractMultiYAML(img crv1.Image) ([]byte, error) {
@@ -114,6 +110,11 @@ func extractMultiYAML(img crv1.Image) ([]byte, error) {
 	err = untar(src, dst)
 
 	return buf.Bytes(), err
+}
+
+func XRDSpecs(xrd *xpextv1.CompositeResourceDefinition) (map[string]extv1.JSONSchemaProps, []string, error) {
+	vr := xrd.Spec.Versions[0]
+	return getProps("spec", vr.Schema)
 }
 
 func getProps(field string, v *xpextv1.CompositeResourceValidation) (map[string]extv1.JSONSchemaProps, []string, error) {
