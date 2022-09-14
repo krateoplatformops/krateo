@@ -56,7 +56,7 @@ type ConditionedStatus struct {
 	Conditions []Condition `json:"conditions,omitempty"`
 }
 
-func waitUntilHealtyAndInstalled(ctx context.Context, restConfig *rest.Config, name string) error {
+func WaitUntilHealtyAndInstalled(ctx context.Context, restConfig *rest.Config, name string) error {
 	stopFn := func(et watch.EventType, obj *unstructured.Unstructured) (bool, error) {
 		if obj.GetName() != name {
 			return false, nil

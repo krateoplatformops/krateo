@@ -20,7 +20,7 @@ func TestWatchKO(t *testing.T) {
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig, "")
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	err = waitUntilHealtyAndInstalled(context.Background(), restConfig, "krateo-module-core-xxx")
+	err = WaitUntilHealtyAndInstalled(context.Background(), restConfig, "krateo-module-core-xxx")
 	assert.ErrorIs(t, err, core.ErrWatcherTimeout)
 }
 
@@ -31,6 +31,6 @@ func TestWatchOK(t *testing.T) {
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig, "")
 	assert.Nil(t, err, "expecting nil error creating rest.Config")
 
-	err = waitUntilHealtyAndInstalled(context.Background(), restConfig, "krateo-module-core-configuration")
+	err = WaitUntilHealtyAndInstalled(context.Background(), restConfig, "krateo-module-core-configuration")
 	assert.Nil(t, err, "expecting not nil error watching")
 }

@@ -226,7 +226,7 @@ func (o *uninstallOpts) deletePackages(ctx context.Context) error {
 			Selector:   sel,
 			GVR:        schema.GroupVersionResource{Version: "v1", Resource: "pods"},
 			Namespace:  el.GetNamespace(),
-			StopFunc: func(et watch.EventType, obj *unstructured.Unstructured) (bool, error) {
+			StopFn: func(et watch.EventType, obj *unstructured.Unstructured) (bool, error) {
 				return (et == watch.Deleted), nil
 			},
 		})

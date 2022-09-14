@@ -11,6 +11,7 @@ import (
 	"github.com/krateoplatformops/krateo/internal/clusterrolebindings"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/krateoplatformops/krateo/internal/crossplane"
+	"github.com/krateoplatformops/krateo/internal/crossplane/configurations"
 	"github.com/krateoplatformops/krateo/internal/crossplane/providers"
 	"github.com/krateoplatformops/krateo/internal/eventbus"
 	"github.com/krateoplatformops/krateo/internal/events"
@@ -74,7 +75,7 @@ func newInitCmd() *cobra.Command {
 	cmd.Flags().StringVar(&o.httpProxy, "http-proxy", os.Getenv("HTTP_PROXY"), "use the specified HTTP proxy")
 	cmd.Flags().StringVar(&o.httpsProxy, "https-proxy", os.Getenv("HTTPS_PROXY"), "use the specified HTTPS proxy")
 	cmd.Flags().StringVar(&o.noProxy, "no-proxy", os.Getenv("NO_PROXY"), "comma-separated list of hosts and domains which do not use the proxy")
-	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "default", "namespace where to install krateo runtime")
+	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "krateo-system", "namespace where to install krateo runtime")
 	cmd.Flags().BoolVar(&o.noCrossplane, "no-crossplane", false, "do not install crossplane")
 
 	return cmd
@@ -125,6 +126,10 @@ func (o *initOpts) run() error {
 	}
 
 	if err := o.createClusterRoleBindings(ctx); err != nil {
+		return err
+	}
+
+	if err := o.installCoreModule(ctx); err != nil {
 		return err
 	}
 
@@ -249,6 +254,31 @@ func (o *initOpts) createClusterRoleBindings(ctx context.Context) error {
 		}
 		o.bus.Publish(events.NewDoneEvent("role bindings '%s' created", name))
 	}
+
+	return nil
+}
+
+func (o *initOpts) installCoreModule(ctx context.Context) error {
+	o.bus.Publish(events.NewStartWaitEvent("installing core module"))
+
+	obj, err := configurations.Create(ctx, configurations.CreateOpts{
+		RESTConfig: o.restConfig,
+		Info: &catalog.PackageInfo{
+			Name:    "krateo-module-core",
+			Image:   "ghcr.io/krateoplatformops/krateo-module-core",
+			Version: "latest",
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = configurations.WaitUntilHealtyAndInstalled(ctx, o.restConfig, obj.GetName())
+	if err != nil {
+		return err
+	}
+
+	o.bus.Publish(events.NewDoneEvent("core module installed"))
 
 	return nil
 }
