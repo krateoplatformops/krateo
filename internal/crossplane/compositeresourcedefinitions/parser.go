@@ -33,7 +33,7 @@ type Field struct {
 	Required    bool
 }
 
-func GetFields(xrd *xpextv1.CompositeResourceDefinition) ([]Field, error) {
+func GetFields(xrd *xpextv1.CompositeResourceDefinition, requiredOnly bool) ([]Field, error) {
 	spec, required, err := getOpenAPISpecs(xrd)
 	if err != nil {
 		return nil, err
@@ -41,8 +41,15 @@ func GetFields(xrd *xpextv1.CompositeResourceDefinition) ([]Field, error) {
 
 	fields := []Field{}
 
-	for _, k := range required {
-		v := spec[k]
+	if requiredOnly {
+		for _, k := range required {
+			v := spec[k]
+			flatten(k, v, &fields)
+		}
+		return fields, nil
+	}
+
+	for k, v := range spec {
 		flatten(k, v, &fields)
 	}
 

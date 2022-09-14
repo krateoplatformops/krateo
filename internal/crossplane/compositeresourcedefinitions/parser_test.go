@@ -25,5 +25,9 @@ func TestGetFields(t *testing.T) {
 	assert.Nil(t, err, "expecting nil error getting composite resource definition")
 	assert.NotNil(t, xrd, "expecting not nil getting composite resource definition")
 
-	fmt.Printf("%v\n", xrd)
+	fields, err := GetFields(xrd, false)
+	assert.Nil(t, err, "expecting nil error parsing composite resource definition")
+	assert.NotNil(t, fields, "expecting not nil getting composite resource definition fields")
+
+	fmt.Printf("%v\n", fields)
 }

@@ -5,19 +5,23 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/krateoplatformops/krateo/internal/catalog"
 	"github.com/krateoplatformops/krateo/internal/clusterrolebindings"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/krateoplatformops/krateo/internal/crossplane"
+	"github.com/krateoplatformops/krateo/internal/crossplane/compositeresourcedefinitions"
 	"github.com/krateoplatformops/krateo/internal/crossplane/configurations"
 	"github.com/krateoplatformops/krateo/internal/crossplane/providers"
 	"github.com/krateoplatformops/krateo/internal/eventbus"
 	"github.com/krateoplatformops/krateo/internal/events"
 	"github.com/krateoplatformops/krateo/internal/helm"
 	"github.com/krateoplatformops/krateo/internal/log"
+	"github.com/krateoplatformops/krateo/internal/prompt"
 	"github.com/spf13/cobra"
+	"helm.sh/helm/v3/pkg/strvals"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
@@ -83,6 +87,7 @@ func newInitCmd() *cobra.Command {
 
 const (
 	crossplaneHelmIndexURL = "https://charts.crossplane.io/stable/index.yaml"
+	coreModuleName         = "core.modules.krateo.io"
 )
 
 type initOpts struct {
@@ -133,6 +138,9 @@ func (o *initOpts) run() error {
 		return err
 	}
 
+	if err := o.promptForRequiredFields(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -280,5 +288,49 @@ func (o *initOpts) installCoreModule(ctx context.Context) error {
 
 	o.bus.Publish(events.NewDoneEvent("core module installed"))
 
+	return nil
+}
+
+func (o *initOpts) promptForRequiredFields(ctx context.Context) error {
+	xrd, err := compositeresourcedefinitions.Get(ctx, o.restConfig, coreModuleName)
+	if err != nil {
+		return err
+	}
+	if xrd == nil {
+		return nil
+	}
+
+	fields, err := compositeresourcedefinitions.GetFields(xrd, true)
+	if err != nil {
+		return err
+	}
+
+	var sb strings.Builder
+	for _, el := range fields {
+		sb.WriteString(el.Name)
+		sb.WriteRune('=')
+
+		label := fmt.Sprintf(" <%s> %s", el.Name, el.Description)
+
+		switch el.Type {
+		case compositeresourcedefinitions.TypeBoolean:
+			inp := prompt.YesNoPrompt(label, false)
+			sb.WriteString(strconv.FormatBool(inp))
+		default:
+			inp := prompt.String(label, el.Default, true)
+			sb.WriteString(inp)
+		}
+
+		sb.WriteRune(',')
+	}
+
+	res, err := strvals.Parse(sb.String())
+	if err != nil {
+		return err
+	}
+
+	for k, v := range res {
+		fmt.Println(k, " => ", v)
+	}
 	return nil
 }
