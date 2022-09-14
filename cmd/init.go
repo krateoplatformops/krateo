@@ -315,12 +315,14 @@ func (o *initOpts) promptForRequiredFields(ctx context.Context) error {
 		res["platform"] = "openshift"
 	}
 
+	fmt.Fprintln(os.Stderr)
+
 	var sb strings.Builder
 	for _, el := range fields {
 		sb.WriteString(el.Name)
 		sb.WriteRune('=')
 
-		label := fmt.Sprintf(" <%s> %s", el.Name, el.Description)
+		label := fmt.Sprintf(" > [%s] %s", el.Name, el.Description)
 
 		switch el.Type {
 		case compositeresourcedefinitions.TypeBoolean:
