@@ -104,7 +104,7 @@ func waitUntilProviderIsReady(ctx context.Context, restConfig *rest.Config, name
 		GVR:        schema.GroupVersionResource{Version: "v1", Resource: "pods"},
 		Namespace:  namespace,
 		Selector:   sel,
-		StopFunc:   stopFn,
+		StopFn:     stopFn,
 	})
 }
 

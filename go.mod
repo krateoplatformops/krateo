@@ -6,6 +6,7 @@ require (
 	github.com/Machiel/slugify v1.0.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/crossplane/crossplane v1.9.0
+	github.com/crossplane/crossplane-runtime v0.16.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/google/go-containerregistry v0.11.0
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213
@@ -47,7 +48,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chai2010/gettext-go v0.0.0-20160711120539-c6fed771bfd5 // indirect
 	github.com/containerd/containerd v1.6.6 // indirect
-	github.com/crossplane/crossplane-runtime v0.16.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/docker/cli v20.10.17+incompatible // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect

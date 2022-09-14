@@ -2,8 +2,10 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -16,17 +18,24 @@ import (
 	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
+var (
+	ErrWatcherTimeout = errors.New("watcher timed out")
+)
+
+type StopFunc func(et watch.EventType, obj *unstructured.Unstructured) (bool, error)
+
 type WatchOpts struct {
 	RESTConfig *rest.Config
 	GVR        schema.GroupVersionResource
 	Selector   labels.Selector
 	Namespace  string
-	StopFunc   func(et watch.EventType, obj *unstructured.Unstructured) (bool, error)
+	Timeout    time.Duration
+	StopFn     StopFunc
 }
 
 func Watch(ctx context.Context, opts WatchOpts) error {
 	watchFn := func(_ metav1.ListOptions) (watch.Interface, error) {
-		timeoutSecs := int64(120)
+		timeoutSecs := int64(180)
 
 		dc, err := dynamic.NewForConfig(opts.RESTConfig)
 		if err != nil {
@@ -38,6 +47,10 @@ func Watch(ctx context.Context, opts WatchOpts) error {
 		}
 		if opts.Selector != nil {
 			listOpts.LabelSelector = opts.Selector.String()
+		}
+
+		if len(opts.Namespace) == 0 {
+			return dc.Resource(opts.GVR).Watch(ctx, listOpts)
 		}
 
 		return dc.Resource(opts.GVR).Namespace(opts.Namespace).Watch(ctx, listOpts)
@@ -57,30 +70,47 @@ func Watch(ctx context.Context, opts WatchOpts) error {
 	}()
 
 	// process incoming event notifications
+	if opts.Timeout <= 0 {
+		opts.Timeout = 3 * time.Minute
+	}
+	timer := time.NewTimer(opts.Timeout)
+	return watchOnce(rw, opts.StopFn, timer)
+}
+
+func watchOnce(w watch.Interface, stopFn StopFunc, timer *time.Timer) error {
+	var err error
+
+loop:
 	for {
+		select {
 		// grab the event object
-		event, ok := <-rw.ResultChan()
-		if !ok {
-			return fmt.Errorf("closed channel")
-		}
+		case event, ok := <-w.ResultChan():
+			if !ok {
+				err = fmt.Errorf("closed channel")
+				break loop
+			}
 
-		if opts.StopFunc == nil {
-			break
-		}
+			if stopFn == nil {
+				break loop
+			}
 
-		obj, ok := event.Object.(*unstructured.Unstructured)
-		if !ok {
-			return fmt.Errorf("invalid type '%T'", event.Object)
-		}
+			obj, ok := event.Object.(*unstructured.Unstructured)
+			if !ok {
+				err = fmt.Errorf("invalid type '%T'", event.Object)
+				break loop
+			}
 
-		exit, err := opts.StopFunc(event.Type, obj)
-		if err != nil {
-			return err
-		}
-		if exit {
-			break
+			exit, err := stopFn(event.Type, obj)
+			if err != nil {
+				return err
+			}
+			if exit {
+				return nil
+			}
+		case <-timer.C:
+			return ErrWatcherTimeout
 		}
 	}
 
-	return nil
+	return err
 }
