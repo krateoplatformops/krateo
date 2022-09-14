@@ -81,6 +81,7 @@ func newInitCmd() *cobra.Command {
 	cmd.Flags().StringVar(&o.noProxy, "no-proxy", os.Getenv("NO_PROXY"), "comma-separated list of hosts and domains which do not use the proxy")
 	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "krateo-system", "namespace where to install krateo runtime")
 	cmd.Flags().BoolVar(&o.noCrossplane, "no-crossplane", false, "do not install crossplane")
+	cmd.Flags().BoolVar(&o.openshift, "openshift", false, "true if installing Krateo on OpenShift")
 
 	return cmd
 }
@@ -101,6 +102,7 @@ type initOpts struct {
 	httpsProxy        string
 	noProxy           string
 	noCrossplane      bool
+	openshift         bool
 }
 
 func (o *initOpts) complete() (err error) {
@@ -305,6 +307,14 @@ func (o *initOpts) promptForRequiredFields(ctx context.Context) error {
 		return err
 	}
 
+	res := map[string]interface{}{
+		"namespace": o.namespace,
+		"platform":  "kubernetes",
+	}
+	if o.openshift {
+		res["platform"] = "openshift"
+	}
+
 	var sb strings.Builder
 	for _, el := range fields {
 		sb.WriteString(el.Name)
@@ -324,8 +334,7 @@ func (o *initOpts) promptForRequiredFields(ctx context.Context) error {
 		sb.WriteRune(',')
 	}
 
-	res, err := strvals.Parse(sb.String())
-	if err != nil {
+	if err := strvals.ParseInto(sb.String(), res); err != nil {
 		return err
 	}
 
