@@ -3,7 +3,6 @@ package claims
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -34,8 +33,6 @@ func Create(ctx context.Context, opts CreateCoreOpts) error {
 		return err
 	}
 
-	spew.Dump(obj)
-
 	return core.Create(ctx, core.CreateOpts{
 		RESTConfig: opts.RESTConfig,
 		GVK:        gvk,
@@ -62,7 +59,7 @@ func CoreDefaultClaims() map[string]interface{} {
 		"socket-service": map[string]interface{}{
 			"hostname": "socket",
 		},
-		"kong": map[string]interface{}{
+		"kongapigw": map[string]interface{}{
 			"postgresql": map[string]interface{}{
 				"enabled": true,
 			},
