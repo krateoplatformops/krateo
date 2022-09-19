@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/krateoplatformops/krateo/internal/catalog"
+	"github.com/krateoplatformops/krateo/internal/claims"
 	"github.com/krateoplatformops/krateo/internal/clusterrolebindings"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/krateoplatformops/krateo/internal/crossplane"
@@ -20,8 +21,8 @@ import (
 	"github.com/krateoplatformops/krateo/internal/helm"
 	"github.com/krateoplatformops/krateo/internal/log"
 	"github.com/krateoplatformops/krateo/internal/prompt"
+	"github.com/krateoplatformops/krateo/internal/strvals"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/strvals"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
@@ -82,6 +83,8 @@ func newInitCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "krateo-system", "namespace where to install krateo runtime")
 	cmd.Flags().BoolVar(&o.noCrossplane, "no-crossplane", false, "do not install crossplane")
 	cmd.Flags().BoolVar(&o.openshift, "openshift", false, "true if installing Krateo on OpenShift")
+	cmd.Flags().StringSliceVar(&o.values, "set", []string{}, "allows you to define values used in core module")
+	cmd.Flags().MarkHidden("set")
 
 	return cmd
 }
@@ -103,6 +106,7 @@ type initOpts struct {
 	noProxy           string
 	noCrossplane      bool
 	openshift         bool
+	values            []string
 }
 
 func (o *initOpts) complete() (err error) {
@@ -120,7 +124,7 @@ func (o *initOpts) complete() (err error) {
 }
 
 func (o *initOpts) run() error {
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	if o.noCrossplane == false {
 		if err := o.installCrossplane(ctx); err != nil {
@@ -140,9 +144,15 @@ func (o *initOpts) run() error {
 		return err
 	}
 
-	if err := o.promptForRequiredFields(ctx); err != nil {
+	vals, err := o.promptForClaims(ctx)
+	if err != nil {
 		return err
 	}
+
+	if err := o.applyClaims(ctx, vals); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -293,55 +303,87 @@ func (o *initOpts) installCoreModule(ctx context.Context) error {
 	return nil
 }
 
-func (o *initOpts) promptForRequiredFields(ctx context.Context) error {
+func (o *initOpts) promptForClaims(ctx context.Context) ([]string, error) {
 	xrd, err := compositeresourcedefinitions.Get(ctx, o.restConfig, coreModuleName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if xrd == nil {
-		return nil
+		return nil, nil
 	}
 
 	fields, err := compositeresourcedefinitions.GetFields(xrd, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	res := map[string]interface{}{
-		"namespace": o.namespace,
-		"platform":  "kubernetes",
+	res := []string{
+		fmt.Sprintf("namespace=%s", o.namespace),
 	}
 	if o.openshift {
-		res["platform"] = "openshift"
+		res = append(res, fmt.Sprintf("platform=%s", "openshift"))
+	} else {
+		res = append(res, fmt.Sprintf("platform=%s", "kubernetes"))
 	}
 
-	fmt.Fprintln(os.Stderr)
-
-	var sb strings.Builder
 	for _, el := range fields {
-		sb.WriteString(el.Name)
-		sb.WriteRune('=')
-
 		label := fmt.Sprintf(" > [%s] %s", el.Name, el.Description)
 
 		switch el.Type {
 		case compositeresourcedefinitions.TypeBoolean:
 			inp := prompt.YesNoPrompt(label, false)
-			sb.WriteString(strconv.FormatBool(inp))
+			res = append(res, fmt.Sprintf("%s=%t", el.Name, inp))
 		default:
 			inp := prompt.String(label, el.Default, true)
-			sb.WriteString(inp)
+			res = append(res, fmt.Sprintf("%s=%s", el.Name, inp))
 		}
-
-		sb.WriteRune(',')
 	}
 
-	if err := strvals.ParseInto(sb.String(), res); err != nil {
+	return res, nil
+}
+
+func (o *initOpts) applyClaims(ctx context.Context, vals []string) error {
+	o.bus.Publish(events.NewStartWaitEvent("installing core module claims ..."))
+
+	inp, err := strvals.ParseString(strings.Join(vals, ","))
+	if err != nil {
 		return err
 	}
 
-	for k, v := range res {
-		fmt.Println(k, " => ", v)
+	if len(o.values) > 0 {
+		err := strvals.ParseInto(strings.Join(o.values, ","), inp)
+		if err != nil {
+			return err
+		}
 	}
+
+	if o.verbose {
+		b, err := json.MarshalIndent(inp, "", "  ")
+		if err == nil {
+			o.bus.Publish(events.NewDebugEvent(string(b)))
+		}
+	}
+
+	err = claims.ApplyCoreModule(ctx, claims.ModuleOpts{
+		RESTConfig: o.restConfig,
+		Data:       inp,
+	})
+	if err != nil {
+		return err
+	}
+
+	o.bus.Publish(events.NewDoneEvent("core module claims installed"))
+
+	o.bus.Publish(events.NewStartWaitEvent("waiting for Krateo readiness ..."))
+	err = claims.WaitUntilModuleCoreIsReady(ctx, o.restConfig)
+	if err != nil {
+		return err
+	}
+
+	o.bus.Publish(events.NewDoneEvent("Krateo is ready"))
+
+	fmt.Printf("\n\n")
+	fmt.Printf(" >> https://app.%s\n\n", inp["domain"])
+
 	return nil
 }

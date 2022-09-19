@@ -65,7 +65,7 @@ func Install(ctx context.Context, opts InstallOpts) error {
 	}
 
 	// install the provider
-	err = core.Apply(ctx, core.ApplyOpts{RESTConfig: opts.RESTConfig, Object: obj, GVK: gvk})
+	err = core.Apply(ctx, core.ApplyOpts{RESTConfig: opts.RESTConfig, Object: obj, GVK: *gvk})
 	if err != nil {
 		return err
 	}

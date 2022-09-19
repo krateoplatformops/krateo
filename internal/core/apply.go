@@ -14,11 +14,11 @@ import (
 type ApplyOpts struct {
 	RESTConfig *rest.Config
 	Object     *unstructured.Unstructured
-	GVK        *schema.GroupVersionKind
+	GVK        schema.GroupVersionKind
 }
 
 func Apply(ctx context.Context, opts ApplyOpts) error {
-	dr, err := DynamicForGVR(opts.RESTConfig, *opts.GVK, opts.Object.GetNamespace())
+	dr, err := DynamicForGVR(opts.RESTConfig, opts.GVK, opts.Object.GetNamespace())
 	if err != nil {
 		if IsNoKindMatchError(err) {
 			return nil

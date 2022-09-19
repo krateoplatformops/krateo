@@ -2,7 +2,6 @@ package claims
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/krateoplatformops/krateo/internal/core"
@@ -72,7 +71,7 @@ func WaitUntilReady(ctx context.Context, restConfig *rest.Config, name string) e
 		if err != nil {
 			return false, err
 		}
-		fmt.Printf("%v\n", status)
+		//fmt.Printf("%v\n", status)
 		ready := false
 		for _, cond := range status.Conditions {
 			if cond.Type == TypeReady {
@@ -89,4 +88,8 @@ func WaitUntilReady(ctx context.Context, restConfig *rest.Config, name string) e
 		StopFn:     stopFn,
 		Timeout:    time.Minute * 5,
 	})
+}
+
+func WaitUntilModuleCoreIsReady(ctx context.Context, restConfig *rest.Config) error {
+	return WaitUntilReady(ctx, restConfig, "core")
 }

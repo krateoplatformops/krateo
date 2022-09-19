@@ -38,7 +38,7 @@ func TestCore(t *testing.T) {
 	//dflts := maps.Map(CoreDefaultClaims())
 	//inp := data.MergeHere(dflts)
 
-	err = Create(context.TODO(), CreateCoreOpts{
+	err = ApplyCoreModule(context.TODO(), ModuleOpts{
 		RESTConfig: restConfig,
 		Data:       inp,
 	})

@@ -3,19 +3,18 @@ package claims
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 )
 
-type CreateCoreOpts struct {
+type ModuleOpts struct {
 	RESTConfig *rest.Config
 	Data       map[string]interface{}
 }
 
-func Create(ctx context.Context, opts CreateCoreOpts) error {
+func ApplyCoreModule(ctx context.Context, opts ModuleOpts) error {
 	gvk := getGroupVersionKind()
 
 	obj := &unstructured.Unstructured{}
@@ -30,20 +29,11 @@ func Create(ctx context.Context, opts CreateCoreOpts) error {
 		return err
 	}
 
-	spew.Dump(obj)
-
 	return core.Apply(ctx, core.ApplyOpts{
 		RESTConfig: opts.RESTConfig,
-		GVK:        &gvk,
+		GVK:        gvk,
 		Object:     obj,
 	})
-	/*
-		return core.Create(ctx, core.CreateOpts{
-			RESTConfig: opts.RESTConfig,
-			GVK:        gvk,
-			Object:     obj,
-		})
-	*/
 }
 
 func CoreDefaultClaims() map[string]interface{} {
@@ -68,7 +58,7 @@ func CoreDefaultClaims() map[string]interface{} {
 		},
 		"deployment-service": map[string]interface{}{
 			"version":  "1.0.18",
-			"hostname": "socket",
+			"hostname": "deployment",
 		},
 		"kongapigw": map[string]interface{}{
 			"postgresql": map[string]interface{}{

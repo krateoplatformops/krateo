@@ -55,3 +55,4 @@ demo.yaml
 .dccache
 secret.txt
 testdata/krateo-test.yml
+testdata/values.txt
