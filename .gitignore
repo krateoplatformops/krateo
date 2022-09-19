@@ -54,3 +54,4 @@ demo.yaml
 # *.gif
 .dccache
 secret.txt
+testdata/krateo-test.yml

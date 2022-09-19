@@ -52,6 +52,9 @@ func Install(ctx context.Context, opts InstallOpts) error {
 		ReleaseName: chartReleaseName,
 		ChartSource: bytes.NewReader(chartArchive.Bytes()),
 		ChartValues: map[string]interface{}{
+			"args": []interface{}{
+				"--debug",
+			},
 			"securityContextCrossplane": map[string]interface{}{
 				"runAsUser":  nil,
 				"runAsGroup": nil,

@@ -3,6 +3,7 @@ package claims
 import (
 	"context"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/krateoplatformops/krateo/internal/core"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -15,11 +16,7 @@ type CreateCoreOpts struct {
 }
 
 func Create(ctx context.Context, opts CreateCoreOpts) error {
-	gvk := schema.GroupVersionKind{
-		Group:   "modules.krateo.io",
-		Version: "v1",
-		Kind:    "Core",
-	}
+	gvk := getGroupVersionKind()
 
 	obj := &unstructured.Unstructured{}
 	obj.SetKind(gvk.Kind)
@@ -33,11 +30,20 @@ func Create(ctx context.Context, opts CreateCoreOpts) error {
 		return err
 	}
 
-	return core.Create(ctx, core.CreateOpts{
+	spew.Dump(obj)
+
+	return core.Apply(ctx, core.ApplyOpts{
 		RESTConfig: opts.RESTConfig,
-		GVK:        gvk,
+		GVK:        &gvk,
 		Object:     obj,
 	})
+	/*
+		return core.Create(ctx, core.CreateOpts{
+			RESTConfig: opts.RESTConfig,
+			GVK:        gvk,
+			Object:     obj,
+		})
+	*/
 }
 
 func CoreDefaultClaims() map[string]interface{} {
@@ -51,6 +57,7 @@ func CoreDefaultClaims() map[string]interface{} {
 			"hostname": "app",
 		},
 		"api": map[string]interface{}{
+			"version":  "1.0.1",
 			"hostname": "api",
 		},
 		"argo-cd": map[string]interface{}{
@@ -59,10 +66,30 @@ func CoreDefaultClaims() map[string]interface{} {
 		"socket-service": map[string]interface{}{
 			"hostname": "socket",
 		},
+		"deployment-service": map[string]interface{}{
+			"version":  "1.0.18",
+			"hostname": "socket",
+		},
 		"kongapigw": map[string]interface{}{
 			"postgresql": map[string]interface{}{
 				"enabled": true,
 			},
 		},
+	}
+}
+
+func getGroupVersionKind() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   "modules.krateo.io",
+		Version: "v1",
+		Kind:    "Core",
+	}
+}
+
+func getGroupVersionResource() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "modules.krateo.io",
+		Version:  "v1",
+		Resource: "core",
 	}
 }

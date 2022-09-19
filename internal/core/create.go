@@ -41,5 +41,5 @@ func Create(ctx context.Context, opts CreateOpts) error {
 		}
 	}
 
-	return nil
+	return err
 }
