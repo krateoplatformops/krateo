@@ -3,11 +3,11 @@ package compositeresourcedefinitions
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	xpextv1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 	"github.com/pkg/errors"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 const (
@@ -33,58 +33,23 @@ type Field struct {
 	Required    bool
 }
 
-func GetFields(xrd *xpextv1.CompositeResourceDefinition, requiredOnly bool) ([]Field, error) {
-	spec, required, err := getOpenAPISpecs(xrd)
+func GetSpecFields(xrd *xpextv1.CompositeResourceDefinition) ([]Field, error) {
+	vr := xrd.Spec.Versions[0]
+	spec, required, err := getProps("spec", vr.Schema)
 	if err != nil {
 		return nil, err
 	}
 
-	fields := []Field{}
-
-	if requiredOnly {
-		for _, k := range required {
-			v := spec[k]
-			flatten(k, v, &fields)
-		}
-		return fields, nil
+	res := []Field{}
+	for key, el := range spec {
+		flattenProps(key, el, required, &res)
 	}
 
-	for k, v := range spec {
-		flatten(k, v, &fields)
-	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Name < res[j].Name
+	})
 
-	return fields, nil
-}
-
-func flatten(prefix string, src v1.JSONSchemaProps, fields *[]Field) {
-	switch src.Type {
-	case TypeObject:
-		flattenObject(prefix, src, fields)
-	case TypeArray:
-		flattenArray(prefix, src, fields)
-	default:
-		*fields = append(*fields, Field{
-			Name:        prefix,
-			Description: src.Description,
-			Type:        src.Type,
-		})
-	}
-
-}
-
-func flattenArray(prefix string, src v1.JSONSchemaProps, fields *[]Field) {
-	fmt.Println("NOT IMPLEMENTED")
-}
-
-func flattenObject(prefix string, src v1.JSONSchemaProps, fields *[]Field) {
-	for k, v := range src.Properties {
-		flatten(prefix+"."+k, v, fields)
-	}
-}
-
-func getOpenAPISpecs(xrd *xpextv1.CompositeResourceDefinition) (map[string]extv1.JSONSchemaProps, []string, error) {
-	vr := xrd.Spec.Versions[0]
-	return getProps("spec", vr.Schema)
+	return res, nil
 }
 
 func getProps(field string, v *xpextv1.CompositeResourceValidation) (map[string]extv1.JSONSchemaProps, []string, error) {
@@ -103,4 +68,64 @@ func getProps(field string, v *xpextv1.CompositeResourceValidation) (map[string]
 	}
 
 	return spec.Properties, spec.Required, nil
+}
+
+func flattenProps(prefix string, val extv1.JSONSchemaProps, req []string, fields *[]Field) {
+	switch val.Type {
+	case TypeObject:
+		for key, el := range val.Properties {
+			flattenProps(prefix+"."+key, el, el.Required, fields)
+		}
+	case TypeArray:
+	default:
+		*fields = append(*fields, Field{
+			Name:        prefix,
+			Description: val.Description,
+			Type:        val.Type,
+			Default:     strval(val.Default),
+			Required:    contains(req, ext(prefix)),
+		})
+	}
+}
+
+func strval(inp *extv1.JSON) string {
+	if inp == nil || inp.Raw == nil {
+		return ""
+	}
+
+	var v interface{}
+	if err := json.Unmarshal(inp.Raw, &v); err != nil {
+		return err.Error()
+	}
+
+	switch v := v.(type) {
+	case string:
+		return v
+	case []byte:
+		return string(v)
+	case error:
+		return v.Error()
+	case fmt.Stringer:
+		return v.String()
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func ext(prefix string) string {
+	for i := len(prefix) - 1; i >= 0; i-- {
+		if prefix[i] == '.' {
+			return prefix[i+1:]
+		}
+	}
+	return prefix
 }

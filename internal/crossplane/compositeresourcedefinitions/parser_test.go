@@ -4,30 +4,58 @@
 package compositeresourcedefinitions
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"testing"
 
-	"github.com/krateoplatformops/krateo/internal/core"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+
+	xpextv1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 )
 
-func TestGetFields(t *testing.T) {
-	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
-	assert.Nil(t, err, "expecting nil error loading kubeconfig")
+func TestGetSpecFields(t *testing.T) {
+	obj, err := loadSampleCompositeResourceDefinition()
+	assert.Nil(t, err, "expecting nil error decoding definition")
+	assert.NotNil(t, obj, "expecting not nil unstructured object")
 
-	restConfig, err := core.RESTConfigFromBytes(kubeconfig, "")
-	assert.Nil(t, err, "expecting nil error creating rest.Config")
+	xrd := obj.(*xpextv1.CompositeResourceDefinition)
+	res, err := GetSpecFields(xrd)
+	assert.Nil(t, err, "expecting nil error getting spec fields")
 
-	xrd, err := Get(context.TODO(), restConfig, "core.modules.krateo.io")
-	assert.Nil(t, err, "expecting nil error getting composite resource definition")
-	assert.NotNil(t, xrd, "expecting not nil getting composite resource definition")
+	for _, el := range res {
+		fmt.Printf("%+v\n", el)
+	}
+}
 
-	fields, err := GetFields(xrd, false)
-	assert.Nil(t, err, "expecting nil error parsing composite resource definition")
-	assert.NotNil(t, fields, "expecting not nil getting composite resource definition fields")
+/*
+// GetPropFields returns the fields from a map of schema properties
+func GetPropFields(props map[string]extv1.JSONSchemaProps) []string {
+	propFields := make([]string, len(props))
+	i := 0
+	for k := range props {
+		propFields[i] = k
+		i++
+	}
+	return propFields
+}
+*/
 
-	fmt.Printf("%v\n", fields)
+func loadSampleCompositeResourceDefinition() (runtime.Object, error) {
+	const (
+		sampleFile = "../../../testdata/definition.yaml"
+	)
+
+	scheme := runtime.NewScheme()
+	_ = xpextv1.AddToScheme(scheme)
+
+	decode := serializer.NewCodecFactory(scheme).UniversalDeserializer().Decode
+	stream, err := ioutil.ReadFile(sampleFile)
+	if err != nil {
+		return nil, err
+	}
+
+	obj, _, err := decode(stream, nil, nil)
+	return obj, err
 }

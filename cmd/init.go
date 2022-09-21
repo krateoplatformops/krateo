@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/krateoplatformops/krateo/internal/catalog"
@@ -312,7 +313,7 @@ func (o *initOpts) promptForClaims(ctx context.Context) ([]string, error) {
 		return nil, nil
 	}
 
-	fields, err := compositeresourcedefinitions.GetFields(xrd, true)
+	fields, err := compositeresourcedefinitions.GetSpecFields(xrd)
 	if err != nil {
 		return nil, err
 	}
@@ -327,12 +328,30 @@ func (o *initOpts) promptForClaims(ctx context.Context) ([]string, error) {
 	}
 
 	for _, el := range fields {
-		label := fmt.Sprintf(" > [%s] %s", el.Name, el.Description)
+		if !el.Required {
+			continue
+		}
+
+		label := fmt.Sprintf(" > %s", el.Name)
 
 		switch el.Type {
 		case compositeresourcedefinitions.TypeBoolean:
-			inp := prompt.YesNoPrompt(label, false)
+			var def bool
+			if val, err := strconv.ParseBool(el.Default); err == nil {
+				def = val
+			}
+			inp := prompt.YesNoPrompt(label, def)
 			res = append(res, fmt.Sprintf("%s=%t", el.Name, inp))
+		case compositeresourcedefinitions.TypeInteger:
+			inp := prompt.String(label, el.Default, true)
+			if i, err := strconv.Atoi(inp); err != nil {
+				res = append(res, fmt.Sprintf("%s=%d", el.Name, i))
+			}
+		case compositeresourcedefinitions.TypeNumber:
+			inp := prompt.String(label, el.Default, true)
+			if f, err := strconv.ParseFloat(inp, 64); err != nil {
+				res = append(res, fmt.Sprintf("%s=%f", el.Name, f))
+			}
 		default:
 			inp := prompt.String(label, el.Default, true)
 			res = append(res, fmt.Sprintf("%s=%s", el.Name, inp))
