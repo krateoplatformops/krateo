@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -28,6 +27,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"sigs.k8s.io/yaml"
 )
 
 func newInitCmd() *cobra.Command {
@@ -344,7 +345,7 @@ func (o *initOpts) promptForClaims(ctx context.Context) ([]string, error) {
 			res = append(res, fmt.Sprintf("%s=%t", el.Name, inp))
 		case compositeresourcedefinitions.TypeInteger:
 			inp := prompt.String(label, el.Default, true)
-			if i, err := strconv.Atoi(inp); err != nil {
+			if i, err := strconv.Atoi(inp); err == nil {
 				res = append(res, fmt.Sprintf("%s=%d", el.Name, i))
 			}
 		case compositeresourcedefinitions.TypeNumber:
@@ -364,7 +365,8 @@ func (o *initOpts) promptForClaims(ctx context.Context) ([]string, error) {
 func (o *initOpts) applyClaims(ctx context.Context, vals []string) error {
 	o.bus.Publish(events.NewStartWaitEvent("installing core module claims ..."))
 
-	inp, err := strvals.ParseString(strings.Join(vals, ","))
+	inp := make(map[string]interface{})
+	err := strvals.ParseInto(strings.Join(vals, ","), inp)
 	if err != nil {
 		return err
 	}
@@ -377,7 +379,8 @@ func (o *initOpts) applyClaims(ctx context.Context, vals []string) error {
 	}
 
 	if o.verbose {
-		b, err := json.MarshalIndent(inp, "", "  ")
+		//o.bus.Publish(events.NewDebugEvent(spew.Sdump(inp)))
+		b, err := yaml.Marshal(inp)
 		if err == nil {
 			o.bus.Publish(events.NewDebugEvent(string(b)))
 		}

@@ -506,8 +506,6 @@ spec:
                       description: codequality-service helm chart version
                       type: string
               required:
-              - platform
-              - namespace
               - protocol
               - domain
               - domainPort

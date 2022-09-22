@@ -25,7 +25,9 @@ func TestGetSpecFields(t *testing.T) {
 	assert.Nil(t, err, "expecting nil error getting spec fields")
 
 	for _, el := range res {
-		fmt.Printf("%+v\n", el)
+		if el.Required {
+			fmt.Printf("%+v\n", el)
+		}
 	}
 }
 

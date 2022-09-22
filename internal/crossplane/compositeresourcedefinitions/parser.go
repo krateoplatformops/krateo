@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	xpextv1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 	"github.com/pkg/errors"
@@ -74,16 +75,18 @@ func flattenProps(prefix string, val extv1.JSONSchemaProps, req []string, fields
 	switch val.Type {
 	case TypeObject:
 		for key, el := range val.Properties {
-			flattenProps(prefix+"."+key, el, el.Required, fields)
+			flattenProps(prefix+"."+key, el, val.Required, fields)
 		}
 	case TypeArray:
 	default:
+		//root := parent(prefix)
+		//fmt.Printf("root: %s ==> %s =]> %+v\n", root, prefix, req)
 		*fields = append(*fields, Field{
 			Name:        prefix,
 			Description: val.Description,
 			Type:        val.Type,
 			Default:     strval(val.Default),
-			Required:    contains(req, ext(prefix)),
+			Required:    contains(req, leaf(prefix)),
 		})
 	}
 }
@@ -121,7 +124,16 @@ func contains(s []string, e string) bool {
 	return false
 }
 
-func ext(prefix string) string {
+func parent(prefix string) string {
+	parts := strings.Split(prefix, ".")
+	if t := len(parts); t >= 2 {
+		return parts[t-2]
+	}
+
+	return prefix
+}
+
+func leaf(prefix string) string {
 	for i := len(prefix) - 1; i >= 0; i-- {
 		if prefix[i] == '.' {
 			return prefix[i+1:]
