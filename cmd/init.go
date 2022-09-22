@@ -404,8 +404,8 @@ func (o *initOpts) applyClaims(ctx context.Context, vals []string) error {
 
 	o.bus.Publish(events.NewDoneEvent("Krateo is ready"))
 
-	fmt.Printf("\n\n")
-	fmt.Printf(" >> https://app.%s\n\n", inp["domain"])
+	fmt.Printf("\nYou can now use your Krateo PlatformOps instance at the following url:\n")
+	fmt.Printf("  >> https://app.%s\n\n", inp["domain"])
 
 	return nil
 }

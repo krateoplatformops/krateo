@@ -12,6 +12,7 @@ import (
 	"github.com/krateoplatformops/krateo/internal/httputils"
 	"github.com/krateoplatformops/krateo/internal/pods"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -100,7 +101,7 @@ func createNamespaceEventually(ctx context.Context, restConfig *rest.Config, nam
 	obj.SetKind("Namespace")
 	obj.SetName(namespace)
 
-	return core.Create(ctx, core.CreateOpts{
+	err := core.Create(ctx, core.CreateOpts{
 		RESTConfig: restConfig,
 		GVK: schema.GroupVersionKind{
 			Version: "v1",
@@ -108,6 +109,11 @@ func createNamespaceEventually(ctx context.Context, restConfig *rest.Config, nam
 		},
 		Object: obj,
 	})
+	if err != nil && !kerrors.IsAlreadyExists(err) {
+		return err
+	}
+
+	return nil
 }
 
 // waitUntilCrossplaneIdReady waits until Crossplane PODs are ready

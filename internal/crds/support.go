@@ -5,6 +5,7 @@ import (
 
 	"github.com/krateoplatformops/krateo/internal/core"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 )
 
@@ -13,6 +14,7 @@ func PatchAndDelete(ctx context.Context, restConfig *rest.Config, el *unstructur
 		RESTConfig: restConfig,
 		GVK:        el.GroupVersionKind(),
 		PatchData:  []byte(`{"metadata":{"finalizers":[]}}`),
+		PatchType:  types.StrategicMergePatchType,
 		Name:       el.GetName(),
 		Namespace:  el.GetNamespace(),
 	})

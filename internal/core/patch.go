@@ -13,6 +13,7 @@ import (
 type PatchOpts struct {
 	RESTConfig *rest.Config
 	PatchData  []byte
+	PatchType  types.PatchType
 	GVK        schema.GroupVersionKind
 	Name       string
 	Namespace  string
@@ -26,7 +27,7 @@ func Patch(ctx context.Context, opts PatchOpts) error {
 		}
 		return err
 	}
-	_, err = dr.Patch(ctx, opts.Name, types.MergePatchType, opts.PatchData, metav1.PatchOptions{
+	_, err = dr.Patch(ctx, opts.Name, opts.PatchType, opts.PatchData, metav1.PatchOptions{
 		FieldManager: InstalledByValue,
 	})
 	if err != nil {

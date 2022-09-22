@@ -79,7 +79,7 @@ func newUninstallCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&o.dryRun, "dry-run", false, "preview the object that would be deleted, without really deleting it")
 	cmd.Flags().StringVar(&o.kubeconfig, clientcmd.RecommendedConfigPathFlag, defaultKubeconfig, "absolute path to the kubeconfig file")
 	cmd.Flags().StringVar(&o.kubeconfigContext, "context", "", "kubeconfig context to use")
-	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "default", "namespace where to install krateo runtime")
+	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "krateo-system", "namespace where to install krateo runtime")
 
 	return cmd
 }
@@ -135,6 +135,7 @@ func (o *uninstallOpts) run() error {
 	o.deletCompositions(ctx)
 	o.deleteCRDsQuietly(ctx)
 	o.deleteClusterRoleBindingsQuietly(ctx)
+	o.deleteNamespace(ctx)
 	o.bus.Publish(events.NewStartWaitEvent("cleaning done"))
 
 	return nil
@@ -398,4 +399,23 @@ func (o *uninstallOpts) deleteClusterRoleBindingsQuietly(ctx context.Context) {
 			Name:       el.GetName(),
 		})
 	}
+}
+
+func (o *uninstallOpts) deleteNamespace(ctx context.Context) {
+	obj, err := core.Get(ctx, core.GetOpts{
+		RESTConfig: o.restConfig,
+		GVK: schema.GroupVersionKind{
+			Version: "v1", Kind: "Namespace",
+		},
+		Name: o.namespace,
+	})
+	if err != nil || obj == nil {
+		return
+	}
+
+	core.Delete(ctx, core.DeleteOpts{
+		RESTConfig: o.restConfig,
+		Object:     obj,
+	})
+
 }
