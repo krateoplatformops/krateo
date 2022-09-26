@@ -83,6 +83,7 @@ func newInitCmd() *cobra.Command {
 	cmd.Flags().StringVar(&o.httpsProxy, "https-proxy", os.Getenv("HTTPS_PROXY"), "use the specified HTTPS proxy")
 	cmd.Flags().StringVar(&o.noProxy, "no-proxy", os.Getenv("NO_PROXY"), "comma-separated list of hosts and domains which do not use the proxy")
 	cmd.Flags().StringVarP(&o.namespace, "namespace", "n", "krateo-system", "namespace where to install krateo runtime")
+	cmd.Flags().StringVar(&o.coreVersion, "core-version", "latest", "krateo core module version")
 	cmd.Flags().BoolVar(&o.noCrossplane, "no-crossplane", false, "do not install crossplane")
 	cmd.Flags().BoolVar(&o.openshift, "openshift", false, "true if installing Krateo on OpenShift")
 	cmd.Flags().StringSliceVar(&o.values, "set", []string{}, "allows you to define values used in core module")
@@ -108,6 +109,7 @@ type initOpts struct {
 	noProxy           string
 	noCrossplane      bool
 	openshift         bool
+	coreVersion       string
 	values            []string
 }
 
@@ -281,6 +283,10 @@ func (o *initOpts) createClusterRoleBindings(ctx context.Context) error {
 }
 
 func (o *initOpts) installCoreModule(ctx context.Context) error {
+	if len(o.coreVersion) == 0 {
+		o.coreVersion = "latest"
+	}
+
 	o.bus.Publish(events.NewStartWaitEvent("installing core module"))
 
 	obj, err := configurations.Create(ctx, configurations.CreateOpts{
@@ -288,7 +294,7 @@ func (o *initOpts) installCoreModule(ctx context.Context) error {
 		Info: &catalog.PackageInfo{
 			Name:    "krateo-module-core",
 			Image:   "ghcr.io/krateoplatformops/krateo-module-core",
-			Version: "latest",
+			Version: o.coreVersion,
 		},
 	})
 	if err != nil {
