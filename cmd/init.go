@@ -336,36 +336,79 @@ func (o *initOpts) promptForClaims(ctx context.Context) ([]string, error) {
 
 	for _, el := range fields {
 		if !el.Required {
+			if len(el.Default) != 0 {
+				val, err := defaultFieldValue(el)
+				if err != nil {
+					return res, err
+				}
+				res = append(res, val)
+			}
 			continue
 		}
 
-		label := fmt.Sprintf(" > %s", el.Name)
-
-		switch el.Type {
-		case compositeresourcedefinitions.TypeBoolean:
-			var def bool
-			if val, err := strconv.ParseBool(el.Default); err == nil {
-				def = val
-			}
-			inp := prompt.YesNoPrompt(label, def)
-			res = append(res, fmt.Sprintf("%s=%t", el.Name, inp))
-		case compositeresourcedefinitions.TypeInteger:
-			inp := prompt.String(label, el.Default, true)
-			if i, err := strconv.Atoi(inp); err == nil {
-				res = append(res, fmt.Sprintf("%s=%d", el.Name, i))
-			}
-		case compositeresourcedefinitions.TypeNumber:
-			inp := prompt.String(label, el.Default, true)
-			if f, err := strconv.ParseFloat(inp, 64); err != nil {
-				res = append(res, fmt.Sprintf("%s=%f", el.Name, f))
-			}
-		default:
-			inp := prompt.String(label, el.Default, true)
-			res = append(res, fmt.Sprintf("%s=%s", el.Name, inp))
-		}
+		res = append(res, promptForFieldValue(el))
 	}
 
 	return res, nil
+}
+
+func promptForFieldValue(el compositeresourcedefinitions.Field) (val string) {
+	label := fmt.Sprintf(" > %s", el.Name)
+
+	switch el.Type {
+	case compositeresourcedefinitions.TypeBoolean:
+		var def bool
+		if b, err := strconv.ParseBool(el.Default); err == nil {
+			def = b
+		}
+		inp := prompt.YesNoPrompt(label, def)
+		val = fmt.Sprintf("%s=%t", el.Name, inp)
+
+	case compositeresourcedefinitions.TypeInteger:
+		inp := prompt.String(label, el.Default, true)
+		if i, err := strconv.Atoi(inp); err == nil {
+			val = fmt.Sprintf("%s=%d", el.Name, i)
+		}
+
+	case compositeresourcedefinitions.TypeNumber:
+		inp := prompt.String(label, el.Default, true)
+		if f, err := strconv.ParseFloat(inp, 64); err != nil {
+			val = fmt.Sprintf("%s=%f", el.Name, f)
+		}
+	default:
+		inp := prompt.String(label, el.Default, true)
+		val = fmt.Sprintf("%s=%s", el.Name, inp)
+	}
+
+	return val
+}
+
+func defaultFieldValue(el compositeresourcedefinitions.Field) (string, error) {
+	switch el.Type {
+	case compositeresourcedefinitions.TypeBoolean:
+		val, err := strconv.ParseBool(el.Default)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%s=%t", el.Name, val), nil
+
+	case compositeresourcedefinitions.TypeInteger:
+		val, err := strconv.Atoi(el.Default)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%s=%d", el.Name, val), nil
+
+	case compositeresourcedefinitions.TypeNumber:
+		val, err := strconv.ParseFloat(el.Default, 64)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%s=%f", el.Name, val), nil
+
+	default:
+		return fmt.Sprintf("%s=%s", el.Name, el.Default), nil
+	}
 }
 
 func (o *initOpts) applyClaims(ctx context.Context, vals []string) error {

@@ -36,38 +36,6 @@ func ApplyCoreModule(ctx context.Context, opts ModuleOpts) error {
 	})
 }
 
-func CoreDefaultClaims() map[string]interface{} {
-	return map[string]interface{}{
-		//"platform":   "kubernetes",
-		//"namespace":  "krateo-namespace",
-		//"domain":     "krateo.site",
-		"protocol":   "https",
-		"domainPort": int64(443),
-		"app": map[string]interface{}{
-			"hostname": "app",
-		},
-		"api": map[string]interface{}{
-			"version":  "1.0.1",
-			"hostname": "api",
-		},
-		"argo-cd": map[string]interface{}{
-			"hostname": "argocd",
-		},
-		"socket-service": map[string]interface{}{
-			"hostname": "socket",
-		},
-		"deployment-service": map[string]interface{}{
-			"version":  "1.0.18",
-			"hostname": "deployment",
-		},
-		"kongapigw": map[string]interface{}{
-			"postgresql": map[string]interface{}{
-				"enabled": true,
-			},
-		},
-	}
-}
-
 func getGroupVersionKind() schema.GroupVersionKind {
 	return schema.GroupVersionKind{
 		Group:   "modules.krateo.io",
