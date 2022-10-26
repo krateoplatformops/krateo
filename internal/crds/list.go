@@ -53,8 +53,8 @@ func List(ctx context.Context, restConfig *rest.Config) ([]unstructured.Unstruct
 	}
 
 	return core.Filter(all, func(el unstructured.Unstructured) bool {
-		ok := strings.HasSuffix(el.GetName(), "krateo.io")
-		ok = ok || strings.HasSuffix(el.GetName(), "crossplane.io")
+		ok := strings.HasSuffix(el.GroupVersionKind().Group, "krateo.io")
+		ok = ok || strings.HasSuffix(el.GroupVersionKind().Group, "crossplane.io")
 		return ok
 	})
 }
