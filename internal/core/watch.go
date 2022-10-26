@@ -35,13 +35,12 @@ type WatchOpts struct {
 
 func Watch(ctx context.Context, opts WatchOpts) error {
 	watchFn := func(_ metav1.ListOptions) (watch.Interface, error) {
-		timeoutSecs := int64(180)
-
 		dc, err := dynamic.NewForConfig(opts.RESTConfig)
 		if err != nil {
 			return nil, err
 		}
 
+		timeoutSecs := int64(180)
 		listOpts := metav1.ListOptions{
 			TimeoutSeconds: &timeoutSecs,
 		}

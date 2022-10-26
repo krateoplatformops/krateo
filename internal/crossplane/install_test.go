@@ -6,6 +6,7 @@ package crossplane
 import (
 	"context"
 	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -15,7 +16,9 @@ import (
 )
 
 func TestInstall(t *testing.T) {
-	kubeconfig, err := ioutil.ReadFile(clientcmd.RecommendedHomeFile)
+	os.Setenv("KUBECONFIG", "/Users/lucasepe/Projects/Kiratech/krateo-integr-v11.yaml")
+
+	kubeconfig, err := ioutil.ReadFile(os.Getenv(clientcmd.RecommendedConfigPathEnvVar))
 	assert.Nil(t, err, "expecting nil error loading kubeconfig")
 
 	restConfig, err := core.RESTConfigFromBytes(kubeconfig, "")
@@ -23,7 +26,7 @@ func TestInstall(t *testing.T) {
 
 	err = Install(context.TODO(), InstallOpts{
 		RESTConfig: restConfig,
-		Namespace:  "default",
+		Namespace:  "krateo-system",
 	})
 	assert.Nil(t, err, "expecting nil error installing crossplane")
 }
