@@ -25,6 +25,8 @@ Before install Krateo, please verify our [requirements](./docs/REQUIREMENTS.md).
 
 Getting started with Krateo is as easy as following its [installation instructions](./docs/INSTALL.md).
 
+You will find whatever you need in the official <a href="https://docs.krateo.io/">documentation</a>.
+
 ## Reference architecture
 
 We are aware we have mentioned many different software components so far, thus we see why you may be a tad confused. In summary, Krateo' reference architecture can be depicted as follows:
