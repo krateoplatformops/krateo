@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"flag"
-	"io/ioutil"
 	"os"
 
 	"github.com/krateoplatformops/krateo/internal/clusterrolebindings"
@@ -99,7 +98,7 @@ func (o *uninstallOpts) complete() (err error) {
 	flag.Parse()
 	klog.InitFlags(nil)
 
-	yml, err := ioutil.ReadFile(o.kubeconfig)
+	yml, err := os.ReadFile(o.kubeconfig)
 	if err != nil {
 		return err
 	}
@@ -381,7 +380,7 @@ func (o *uninstallOpts) deleteClusterRoleBindingsQuietly(ctx context.Context) {
 		return accept
 	})
 
-	if len(res) == 0 {
+	if len(res) == 0 || err != nil {
 		return
 	}
 

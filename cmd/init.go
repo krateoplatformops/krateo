@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -20,6 +19,7 @@ import (
 	"github.com/krateoplatformops/krateo/internal/events"
 	"github.com/krateoplatformops/krateo/internal/helm"
 	"github.com/krateoplatformops/krateo/internal/log"
+	"github.com/krateoplatformops/krateo/internal/openshift"
 	"github.com/krateoplatformops/krateo/internal/prompt"
 	"github.com/krateoplatformops/krateo/internal/strvals"
 	"github.com/spf13/cobra"
@@ -114,7 +114,7 @@ type initOpts struct {
 }
 
 func (o *initOpts) complete() (err error) {
-	yml, err := ioutil.ReadFile(o.kubeconfig)
+	yml, err := os.ReadFile(o.kubeconfig)
 	if err != nil {
 		return err
 	}
@@ -130,10 +130,14 @@ func (o *initOpts) complete() (err error) {
 func (o *initOpts) run() error {
 	ctx := context.Background()
 
-	if o.noCrossplane == false {
+	if !o.noCrossplane {
 		if err := o.installCrossplane(ctx); err != nil {
 			return err
 		}
+	}
+
+	if err := o.createClusterRoleAndBindingForOpenshift(ctx); err != nil {
+		return err
 	}
 
 	if err := o.installPackages(ctx); err != nil {
@@ -229,6 +233,18 @@ func (o *initOpts) installPackages(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (o *initOpts) createClusterRoleAndBindingForOpenshift(ctx context.Context) error {
+	if !o.openshift {
+		return nil
+	}
+
+	if err := openshift.CreateClusterRole(ctx, o.restConfig); err != nil {
+		return err
+	}
+
+	return openshift.CreateClusterRoleBinding(ctx, o.restConfig)
 }
 
 func (o *initOpts) createClusterRoleBindings(ctx context.Context) error {
