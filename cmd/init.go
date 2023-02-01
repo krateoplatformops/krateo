@@ -244,7 +244,7 @@ func (o *initOpts) createClusterRoleAndBindingForOpenshift(ctx context.Context) 
 		return err
 	}
 
-	return openshift.CreateClusterRoleBinding(ctx, o.restConfig)
+	return openshift.CreateClusterRoleBinding(ctx, o.restConfig, o.namespace)
 }
 
 func (o *initOpts) createClusterRoleBindings(ctx context.Context) error {

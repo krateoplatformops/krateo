@@ -66,7 +66,7 @@ func CreateClusterRole(ctx context.Context, rc *rest.Config) error {
 	return nil
 }
 
-func CreateClusterRoleBinding(ctx context.Context, rc *rest.Config) error {
+func CreateClusterRoleBinding(ctx context.Context, rc *rest.Config, ns string) error {
 	crb := rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
@@ -83,12 +83,12 @@ func CreateClusterRoleBinding(ctx context.Context, rc *rest.Config) error {
 			{
 				Kind:      "ServiceAccount",
 				Name:      "rbac-manager",
-				Namespace: "crossplane-system",
+				Namespace: ns,
 			},
 			{
 				Kind:      "ServiceAccount",
 				Name:      "crossplane",
-				Namespace: "crossplane-system",
+				Namespace: ns,
 			},
 		},
 	}
