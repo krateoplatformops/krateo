@@ -21,8 +21,6 @@ In our vision, Krateo is:
 
 ## Getting started
 
-Before install Krateo, please verify our [requirements](./docs/REQUIREMENTS.md).
-
-Getting started with Krateo is as easy as following its [installation instructions](./docs/INSTALL.md).
-
 You will find whatever you need in the official <a href="https://docs.krateo.io/">documentation</a>.
+
+If you want a playground for testing Krateo, give a look at our free self-service <a href="https://killercoda.com/krateoplatformops/">lab</a>.
