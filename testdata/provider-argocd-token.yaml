@@ -1,7 +1,0 @@
-apiVersion: pkg.crossplane.io/v1
-kind: Provider
-metadata:
-  name: provider-argocd-token
-spec:
-  package: "ghcr.io/krateoplatformops/provider-argocd-token:VERSION"
-  packagePullPolicy: IfNotPresent
