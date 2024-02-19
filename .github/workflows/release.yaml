@@ -1,0 +1,31 @@
+name: release
+
+on:
+  push:
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /scripts/kind.sh
+          asset_name: kind.sh
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /scripts/install-mac-intel.sh
+          asset_name: install-mac-intel.sh
+          tag: ${{ github.ref }}
+          overwrite: true
