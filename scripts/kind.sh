@@ -29,23 +29,14 @@ networking:
   apiServerPort: 6443
 EOF
 
-helm install krateo-frontend krateo-frontend \
-  --repo https://charts.krateo.io \
-  --version 2.0.5 \
-  --namespace krateo-system \
-  --create-namespace \
-  --set service.type=NodePort \
-  --set service.nodePort=30080 \
-  --set env.AUTHN_API_BASE_URL=http://localhost:30082 \
-  --set env.BFF_API_BASE_URL=http://localhost:30081 \
-  --wait
-
 docker cp krateo-quickstart-control-plane:/etc/kubernetes/pki/ca.key ca.key
 docker cp krateo-quickstart-control-plane:/etc/kubernetes/pki/ca.crt ca.crt
 
 export KUBECONFIG_CACRT=$(cat ca.crt | base64 | tr -d '[:space:]')
 
 export KUBECONFIG_CAKEY=$(cat ca.key | base64 | tr -d '[:space:]')
+
+kubectl create ns krateo-system
 
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -60,7 +51,7 @@ EOF
 
 helm install krateo-gateway krateo-gateway \
   --repo https://charts.krateo.io \
-  --version 0.3.6 \
+  --version 0.3.12 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=NodePort \
@@ -79,14 +70,14 @@ helm install authn-service authn-service \
   --set service.type=NodePort \
   --set service.nodePort=30082 \
   --set env.AUTHN_CORS=true \
-  --set env.AUTHN_KUBERNETES_URL=https://127.0.0.1::6443 \
+  --set env.AUTHN_KUBERNETES_URL=https://127.0.0.1:6443 \
   --set env.AUTHN_KUBECONFIG_PROXY_URL=https://krateo-gateway.krateo-system.svc:8443 \
   --set env.AUTHN_KUBECONFIG_CACRT=$KUBECONFIG_CACRT \
   --wait
 
 helm install krateo-bff krateo-bff \
   --repo https://charts.krateo.io \
-  --version 0.12.3 \
+  --version 0.14.3 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=NodePort \
@@ -94,6 +85,24 @@ helm install krateo-bff krateo-bff \
   --set env.KRATEO_BFF_CORS=true \
   --set env.KRATEO_BFF_DUMP_ENV=true \
   --set env.KRATEO_BFF_DEBUG=true \
+  --wait
+
+helm install krateo-frontend krateo-frontend \
+  --repo https://charts.krateo.io \
+  --version 2.0.6 \
+  --namespace krateo-system \
+  --create-namespace \
+  --set service.type=NodePort \
+  --set service.nodePort=30080 \
+  --set env.AUTHN_API_BASE_URL=http://localhost:30082 \
+  --set env.BFF_API_BASE_URL=http://localhost:30081 \
+  --wait
+
+helm install core-provider core-provider \
+  --repo https://charts.krateo.io \
+  --version 0.9.0 \
+  --namespace krateo-system \
+  --create-namespace \
   --wait
 
 cat <<EOF | kubectl apply -f -
@@ -370,11 +379,55 @@ subjects:
 - kind: Group
   name: devs
   apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: core.krateo.io/v1alpha1
+kind: SchemaDefinition
+metadata:
+  annotations:
+     "krateo.io/connector-verbose": "true"
+  name: fireworksapp
+  namespace: demo-system
+spec:
+  schema:
+    version: v1alpha1
+    kind: Fireworksapp
+    url: https://raw.githubusercontent.com/krateoplatformops/krateo-v2-template-fireworksapp/main/chart/values.schema.json
+---
+apiVersion: widgets.ui.krateo.io/v1alpha1
+kind: FormTemplate
+metadata:
+  name: fireworksapp
+  namespace: demo-system
+spec:
+  schemaDefinitionRef:
+    name: fireworksapp
+    namespace: demo-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: apps-viewer
+rules:
+- apiGroups:
+  - apps.krateo.io
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apps-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name:  apps-viewer
+subjects:
+- kind: Group
+  name: devs
+  apiGroup: rbac.authorization.k8s.io
 EOF
 
-helm install core-provider core-provider \
-  --repo https://charts.krateo.io \
-  --version 0.8.2 \
-  --namespace krateo-system \
-  --create-namespace \
-  --wait
+curl http://127.0.0.1:30082/basic/login -H "Authorization: Basic Y3liZXJqb2tlcjoxMjM0NTY=" | jq -r .data > cyberjoker.kubeconfig
