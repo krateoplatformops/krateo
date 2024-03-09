@@ -11,6 +11,7 @@ helm repo add loft-sh https://charts.loft.sh
 helm repo update loft-sh
 
 helm upgrade krateo-vcluster loft-sh/vcluster-k8s \
+  --version 0.19.4 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
@@ -42,7 +43,7 @@ EOF
 
 helm upgrade krateo-gateway krateo-gateway \
   --repo https://charts.krateo.io \
-  --version 0.3.6 \
+  --version 0.3.12 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
@@ -50,6 +51,8 @@ helm upgrade krateo-gateway krateo-gateway \
   --set readinessProbe=null \
   --set env.KRATEO_GATEWAY_CACRT=$KUBECONFIG_CACRT \
   --set env.KRATEO_BFF_SERVER=http://krateo-bff.krateo-system.svc:8081 \
+  --set env.KRATEO_GATEWAY_DEBUG=true \
+  --set env.KRATEO_GATEWAY_DUMP_ENV=true \
   --install \
   --wait
 
@@ -57,7 +60,7 @@ export KRATEO_GATEWAY_LOADBALANCER_IP=$(kubectl get svc krateo-gateway -n krateo
 
 helm upgrade krateo-gateway krateo-gateway \
   --repo https://charts.krateo.io \
-  --version 0.3.6 \
+  --version 0.3.12 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
@@ -66,6 +69,8 @@ helm upgrade krateo-gateway krateo-gateway \
   --set env.KRATEO_GATEWAY_CACRT=$KUBECONFIG_CACRT \
   --set env.KRATEO_BFF_SERVER=http://krateo-bff.krateo-system.svc:8081 \
   --set env.KRATEO_GATEWAY_IP_ADDRESSES=$KRATEO_GATEWAY_LOADBALANCER_IP \
+  --set env.KRATEO_GATEWAY_DEBUG=true \
+  --set env.KRATEO_GATEWAY_DUMP_ENV=true \
   --install \
   --wait
 
@@ -77,7 +82,7 @@ helm upgrade authn-service authn-service \
   --set service.type=LoadBalancer \
   --set env.AUTHN_CORS=true \
   --set env.AUTHN_KUBERNETES_URL=https://$KUBECONFIG_KUBERNETES_IP \
-  --set env.AUTHN_KUBECONFIG_PROXY_URL=http://krateo-gateway.krateo-system.svc:8443 \
+  --set env.AUTHN_KUBECONFIG_PROXY_URL=http://$KRATEO_GATEWAY_LOADBALANCER_IP:8443 \
   --set env.AUTHN_KUBECONFIG_CACRT=$KUBECONFIG_CACRT \
   --set env.AUTHN_DUMP_ENV=true \
   --install \
@@ -87,7 +92,7 @@ export AUTHN_SERVICE_LOADBALANCER_IP=$(kubectl get svc authn-service -n krateo-s
 
 helm upgrade krateo-bff krateo-bff \
   --repo https://charts.krateo.io \
-  --version 0.12.3 \
+  --version 0.14.3 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
@@ -101,13 +106,20 @@ export KRATEO_BFF_LOADBALANCER_IP=$(kubectl get svc krateo-bff -n krateo-system 
 
 helm upgrade krateo-frontend krateo-frontend \
   --repo https://charts.krateo.io \
-  --version 2.0.5 \
+  --version 2.0.6 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
   --set env.AUTHN_API_BASE_URL=http://$AUTHN_SERVICE_LOADBALANCER_IP:8082 \
   --set env.BFF_API_BASE_URL=http://$KRATEO_BFF_LOADBALANCER_IP:8081 \
   --install \
+  --wait
+
+helm install core-provider core-provider \
+  --repo https://charts.krateo.io \
+  --version 0.9.0 \
+  --namespace krateo-system \
+  --create-namespace \
   --wait
 
 cat <<EOF | kubectl apply -f -
@@ -384,11 +396,55 @@ subjects:
 - kind: Group
   name: devs
   apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: core.krateo.io/v1alpha1
+kind: SchemaDefinition
+metadata:
+  annotations:
+     "krateo.io/connector-verbose": "true"
+  name: fireworksapp
+  namespace: demo-system
+spec:
+  schema:
+    version: v1alpha1
+    kind: Fireworksapp
+    url: https://raw.githubusercontent.com/krateoplatformops/krateo-v2-template-fireworksapp/main/chart/values.schema.json
+---
+apiVersion: widgets.ui.krateo.io/v1alpha1
+kind: FormTemplate
+metadata:
+  name: fireworksapp
+  namespace: demo-system
+spec:
+  schemaDefinitionRef:
+    name: fireworksapp
+    namespace: demo-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: apps-viewer
+rules:
+- apiGroups:
+  - apps.krateo.io
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apps-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name:  apps-viewer
+subjects:
+- kind: Group
+  name: devs
+  apiGroup: rbac.authorization.k8s.io
 EOF
 
-helm install core-provider core-provider \
-  --repo https://charts.krateo.io \
-  --version 0.8.2 \
-  --namespace krateo-system \
-  --create-namespace \
-  --wait
+curl http://$AUTHN_SERVICE_LOADBALANCER_IP:8082/basic/login -H "Authorization: Basic Y3liZXJqb2tlcjoxMjM0NTY=" | jq -r .data > cyberjoker.kubeconfig
