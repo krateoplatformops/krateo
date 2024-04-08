@@ -2,6 +2,27 @@
 
 set -x
 
+# Check requirements
+if ! curl --version >/dev/null 2>&1 ; then
+  echo "Missing curl binary, please install it from your OS package manager"
+  exit 1
+fi
+
+if ! jq --version >/dev/null 2>&1 ; then
+  echo "Missing jq binary, please install it from your OS package manager"
+  exit 1
+fi
+
+if ! helm version >/dev/null 2>&1 ; then
+  echo "Missing Helm binary, please install it from https://helm.sh/docs/intro/install/"
+  exit 1
+fi
+
+if ! kubectl >/dev/null 2>&1 ; then
+  echo "Missing Kubectl binary, please install it from https://kubernetes.io/docs/tasks/tools/"
+  exit 1
+fi
+
 helm repo add krateo https://charts.krateo.io
 
 helm repo update krateo
