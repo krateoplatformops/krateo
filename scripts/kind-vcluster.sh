@@ -6,6 +6,10 @@ helm repo add krateo https://charts.krateo.io
 
 helm repo update krateo
 
+helm repo add loft-sh https://charts.loft.sh
+
+helm repo update loft-sh
+
 kind create cluster \
   --wait 120s \
   --config - <<EOF
@@ -13,7 +17,9 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: krateo-quickstart
 nodes:
-- extraPortMappings:
+- role: control-plane
+- role: worker
+  extraPortMappings:
   - containerPort: 30080 # Krateo Portal
     hostPort: 30080
   - containerPort: 30081 # Krateo BFF
@@ -22,6 +28,8 @@ nodes:
     hostPort: 30082
   - containerPort: 30443 # Krateo Gateway
     hostPort: 30443
+  - containerPort: 31443 # vCluster API Server Port
+    hostPort: 31443
 networking:
   # By default the API server listens on a random open port.
   # You may choose a specific port but probably don't need to in most cases.
@@ -29,12 +37,22 @@ networking:
   apiServerPort: 6443
 EOF
 
-docker cp krateo-quickstart-control-plane:/etc/kubernetes/pki/ca.key ca.key
-docker cp krateo-quickstart-control-plane:/etc/kubernetes/pki/ca.crt ca.crt
+helm upgrade krateo-vcluster loft-sh/vcluster-k8s \
+  --version 0.19.5 \
+  --namespace krateo-system \
+  --create-namespace \
+  --set service.type=NodePort \
+  --set service.nodePort=31443 \
+  --install \
+  --wait
 
-export KUBECONFIG_CACRT=$(cat ca.crt | base64 | tr -d '[:space:]')
+export KUBECONFIG_CACRT=$(kubectl get secret krateo-vcluster-certs -n krateo-system -o json | jq -r '.data."ca.crt"')
 
-export KUBECONFIG_CAKEY=$(cat ca.key | base64 | tr -d '[:space:]')
+export KUBECONFIG_CAKEY=$(kubectl get secret krateo-vcluster-certs -n krateo-system -o json | jq -r '.data."ca.key"')
+
+curl -L -o vcluster "https://github.com/loft-sh/vcluster/releases/latest/download/vcluster-darwin-amd64" && chmod +x vcluster
+
+./vcluster connect krateo-vcluster
 
 kubectl create ns krateo-system
 
@@ -51,13 +69,11 @@ EOF
 
 helm install krateo-gateway krateo-gateway \
   --repo https://charts.krateo.io \
-  --version 0.3.14 \
+  --version 0.3.15 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=NodePort \
   --set service.nodePort=30443 \
-  --set livenessProbe=null \
-  --set readinessProbe=null \
   --set env.KRATEO_GATEWAY_CACRT=$KUBECONFIG_CACRT \
   --set env.KRATEO_BFF_SERVER=http://krateo-bff.krateo-system.svc:8081 \
   --set env.KRATEO_GATEWAY_DNS_NAMES=krateo-gateway.krateo-system.svc \
@@ -72,14 +88,14 @@ helm install authn-service authn-service \
   --set service.type=NodePort \
   --set service.nodePort=30082 \
   --set env.AUTHN_CORS=true \
-  --set env.AUTHN_KUBERNETES_URL=https://127.0.0.1:6443 \
+  --set env.AUTHN_KUBERNETES_URL=https://127.0.0.1:31443 \
   --set env.AUTHN_KUBECONFIG_PROXY_URL=https://krateo-gateway.krateo-system.svc:8443 \
   --set env.AUTHN_KUBECONFIG_CACRT=$KUBECONFIG_CACRT \
   --wait
 
 helm install krateo-bff krateo-bff \
   --repo https://charts.krateo.io \
-  --version 0.17.0 \
+  --version 0.17.1 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=NodePort \
@@ -91,7 +107,7 @@ helm install krateo-bff krateo-bff \
 
 helm install krateo-frontend krateo-frontend \
   --repo https://charts.krateo.io \
-  --version 2.0.10 \
+  --version 2.0.12 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=NodePort \
@@ -102,11 +118,9 @@ helm install krateo-frontend krateo-frontend \
 
 helm install core-provider core-provider \
   --repo https://charts.krateo.io \
-  --version 0.9.2 \
+  --version 0.9.3 \
   --namespace krateo-system \
   --create-namespace \
-  --set livenessProbe=null \
-  --set readinessProbe=null \
   --wait
 
 cat <<EOF | kubectl apply -f -

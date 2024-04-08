@@ -11,7 +11,7 @@ helm repo add loft-sh https://charts.loft.sh
 helm repo update loft-sh
 
 helm upgrade krateo-vcluster loft-sh/vcluster-k8s \
-  --version 0.19.4 \
+  --version 0.19.5 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
@@ -43,14 +43,13 @@ EOF
 
 helm upgrade krateo-gateway krateo-gateway \
   --repo https://charts.krateo.io \
-  --version 0.3.12 \
+  --version 0.3.15 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
-  --set livenessProbe=null \
-  --set readinessProbe=null \
   --set env.KRATEO_GATEWAY_CACRT=$KUBECONFIG_CACRT \
   --set env.KRATEO_BFF_SERVER=http://krateo-bff.krateo-system.svc:8081 \
+  --set env.KRATEO_GATEWAY_DNS_NAMES=krateo-gateway.krateo-system.svc \
   --set env.KRATEO_GATEWAY_DEBUG=true \
   --set env.KRATEO_GATEWAY_DUMP_ENV=true \
   --install \
@@ -60,23 +59,14 @@ export KRATEO_GATEWAY_LOADBALANCER_IP=$(kubectl get svc krateo-gateway -n krateo
 
 helm upgrade krateo-gateway krateo-gateway \
   --repo https://charts.krateo.io \
-  --version 0.3.12 \
   --namespace krateo-system \
-  --create-namespace \
-  --set service.type=LoadBalancer \
-  --set livenessProbe=null \
-  --set readinessProbe=null \
-  --set env.KRATEO_GATEWAY_CACRT=$KUBECONFIG_CACRT \
-  --set env.KRATEO_BFF_SERVER=http://krateo-bff.krateo-system.svc:8081 \
   --set env.KRATEO_GATEWAY_IP_ADDRESSES=$KRATEO_GATEWAY_LOADBALANCER_IP \
-  --set env.KRATEO_GATEWAY_DEBUG=true \
-  --set env.KRATEO_GATEWAY_DUMP_ENV=true \
-  --install \
+  --reuse-values \
   --wait
 
 helm upgrade authn-service authn-service \
   --repo https://charts.krateo.io \
-  --version 0.10.1 \
+  --version 0.10.2 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
@@ -92,7 +82,7 @@ export AUTHN_SERVICE_LOADBALANCER_IP=$(kubectl get svc authn-service -n krateo-s
 
 helm upgrade krateo-bff krateo-bff \
   --repo https://charts.krateo.io \
-  --version 0.14.3 \
+  --version 0.17.1 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
@@ -106,7 +96,7 @@ export KRATEO_BFF_LOADBALANCER_IP=$(kubectl get svc krateo-bff -n krateo-system 
 
 helm upgrade krateo-frontend krateo-frontend \
   --repo https://charts.krateo.io \
-  --version 2.0.6 \
+  --version 2.0.12 \
   --namespace krateo-system \
   --create-namespace \
   --set service.type=LoadBalancer \
@@ -117,7 +107,7 @@ helm upgrade krateo-frontend krateo-frontend \
 
 helm install core-provider core-provider \
   --repo https://charts.krateo.io \
-  --version 0.9.0 \
+  --version 0.9.3 \
   --namespace krateo-system \
   --create-namespace \
   --wait
@@ -204,13 +194,8 @@ spec:
     title: \${ .api2.items[0] | (.name  + " -> " + .email) }
     content: \${ .api2.items[0].body }
     date: Sep 15th 2023 08:15:43
-    actions:
-    - name: remove
-      verb: DELETE
-      endpointRef:
-        name: typicode-endpoint
-        namespace: demo-system
-      path: \${ "/todos/1/comments/" + (.api2.items[0].id|tostring) }
+  formTemplateRef:
+    name: fireworksapp
   api:
   - name: api1
     path: "/todos/1"
@@ -243,6 +228,8 @@ spec:
     title: \${ .title }
     content: \${ .description }
     tags: \${ .brand }
+  formTemplateRef:
+    name: fireworksapp
   api:
   - name: api1
     path: "/products"
@@ -266,12 +253,8 @@ spec:
     title: \${ .name }
     content: \${ .body }
     tags: \${ .email }
-    actions:
-    - name: view
-      endpointRef:
-        name: typicode-endpoint
-        namespace: demo-system
-      path: \${ "/todos/1/comments/" + (.id|tostring) }
+  formTemplateRef:
+    name: fireworksapp
   api:
   - name: api1
     path: "/todos/1"
@@ -371,6 +354,35 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: dev-get-formtemplate-fireworksapp-in-demosystem-namespace
+  namespace: demo-system
+rules:
+- apiGroups:
+  - widgets.ui.krateo.io
+  resources:
+  - formtemplates
+  resourceNames:
+  - fireworksapp
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-get-formtemplate-fireworksapp-in-demosystem-namespace
+  namespace: demo-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-get-formtemplate-fireworksapp-in-demosystem-namespace
+subjects:
+- kind: Group
+  name: devs
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: dev-delete-cardtemplate-one-in-demosystem-namespace
   namespace: demo-system
 rules:
@@ -397,6 +409,44 @@ subjects:
   name: devs
   apiGroup: rbac.authorization.k8s.io
 ---
+apiVersion: widgets.ui.krateo.io/v1alpha1
+kind: FormTemplate
+metadata:
+  name: fireworksapp
+  namespace: demo-system
+spec:
+  schemaDefinitionRef:
+    name: fireworksapp
+    namespace: demo-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dev-create-formtemplate-fireworksapp-in-demosystem-namespace
+  namespace: demo-system
+rules:
+- apiGroups:
+  - apps.krateo.io
+  resources:
+  - fireworksapps
+  verbs:
+  - create
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-create-formtemplate-fireworksapp-in-demosystem-namespace
+  namespace: demo-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-create-formtemplate-fireworksapp-in-demosystem-namespace
+subjects:
+- kind: Group
+  name: devs
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: core.krateo.io/v1alpha1
 kind: SchemaDefinition
 metadata:
@@ -409,16 +459,6 @@ spec:
     version: v1alpha1
     kind: Fireworksapp
     url: https://raw.githubusercontent.com/krateoplatformops/krateo-v2-template-fireworksapp/main/chart/values.schema.json
----
-apiVersion: widgets.ui.krateo.io/v1alpha1
-kind: FormTemplate
-metadata:
-  name: fireworksapp
-  namespace: demo-system
-spec:
-  schemaDefinitionRef:
-    name: fireworksapp
-    namespace: demo-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
