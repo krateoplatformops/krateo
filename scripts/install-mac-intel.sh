@@ -14,7 +14,6 @@ helm repo update krateo
 
 helm upgrade installer installer \
   --repo https://charts.krateo.io \
-  --version 0.1.33 \
   --namespace krateo-system \
   --create-namespace \
   --set krateoplatformops.service.type=LoadBalancer \

@@ -35,6 +35,8 @@ nodes:
     hostPort: 30082
   - containerPort: 30443 # Krateo Gateway
     hostPort: 30443
+  - containerPort: 31180 # Krateo FireworksApp Frontend
+    hostPort: 31180
   - containerPort: 31443 # vCluster API Server Port
     hostPort: 31443
 networking:
@@ -46,7 +48,6 @@ EOF
 
 helm upgrade installer installer \
   --repo https://charts.krateo.io \
-  --version 0.1.33 \
   --namespace krateo-system \
   --create-namespace \
   --install \
