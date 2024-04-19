@@ -16,8 +16,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./scripts/kind.sh
-          asset_name: kind.sh
+          file: ./scripts/kind-vcluster.sh
+          asset_name: kind-vcluster.sh
           tag: ${{ github.ref }}
           overwrite: true
 
