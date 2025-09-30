@@ -1,4 +1,4 @@
-## Release 2.5.1
+# Release 2.5.1
 
 ## Removed Charts
 - portal v0.1.10: Removed
@@ -243,11 +243,10 @@
 **Full Changelog**: https://github.com/krateoplatformops-blueprints/portal/compare/0.0.1...1.0.0
 
 
+<br><br>
 
 
-
-
-## Release 2.6.0
+# Release 2.6.0
 
 ## Removed Charts
 Nothing removed
