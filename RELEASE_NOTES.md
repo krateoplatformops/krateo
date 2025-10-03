@@ -207,7 +207,8 @@
 
 
 
-<br><br># Release 2.5.1
+<br><br>
+# Release 2.5.1
 
 ## Removed Charts
 - portal v0.1.10: Removed
