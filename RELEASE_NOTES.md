@@ -1,3 +1,223 @@
+# Release 2.7.0
+
+## Removed Charts
+- finops-moving-window-policy-chart v0.1.2: Removed
+- smithery v0.10.1: Removed
+
+## finops-operator-exporter v0.5.1
+### What's Changed
+
+### ✨ Features
+- feat: add support for generic metric type ([link](https://github.com/krateoplatformops/finops-operator-exporter/pull/90)) by @FrancescoL96
+
+
+**Full Changelog**: https://github.com/krateoplatformops/finops-operator-exporter/compare/0.5.0...0.5.1
+
+
+## finops-database-handler-uploader v0.2.1
+### What's Changed
+
+### 🔧 Other Changes
+- chore: bump plumbing dependency to 094 ([link](https://github.com/krateoplatformops/finops-database-handler-uploader/pull/8)) by @FrancescoL96
+
+
+**Full Changelog**: https://github.com/krateoplatformops/finops-database-handler-uploader/compare/0.2.0...0.2.1
+
+
+## opa-chart v0.2.3
+### What's Changed
+
+
+**Full Changelog**: https://github.com/krateoplatformops/opa-chart/compare/0.2.2...0.2.3
+
+
+## authn v0.22.2
+### What's Changed
+
+### 🐛 Bug Fixes
+- fix: match partial objects from RESTAction in OIDC solver ([link](https://github.com/krateoplatformops/authn/pull/73)) by @FrancescoL96
+
+### 🔧 Other Changes
+- 66 improve the restaction flow to use parametrized restactions ([link](https://github.com/krateoplatformops/authn/pull/67)) by @FrancescoL96
+- refactor: infer Snowplow URL from env variables ([link](https://github.com/krateoplatformops/authn/pull/71)) by @FrancescoL96
+
+
+**Full Changelog**: https://github.com/krateoplatformops/authn/compare/0.21.0...0.22.2
+
+
+## finops-database-handler v0.5.3
+### What's Changed
+
+### ✨ Features
+- feat: added support for generic metric upload ([link](https://github.com/krateoplatformops/finops-database-handler/pull/49)) by @FrancescoL96
+
+### 🔧 Other Changes
+- refactor: hardened code for i/o waits and concurrency ([link](https://github.com/krateoplatformops/finops-database-handler/pull/51)) by @FrancescoL96
+
+
+**Full Changelog**: https://github.com/krateoplatformops/finops-database-handler/compare/0.5.1...0.5.3
+
+
+## eventsse v0.5.8
+### What's Changed
+
+
+**Full Changelog**: https://github.com/krateoplatformops/eventsse/compare/0.5.3...0.5.8
+
+
+## snowplow v0.20.5
+### What's Changed
+
+### ✨ Features
+- feat: update old documentation add more details ([link](https://github.com/krateoplatformops/snowplow/pull/162)) by @lucasepe
+- feat: docs about how to install and adrs ([link](https://github.com/krateoplatformops/snowplow/pull/164)) by @lucasepe
+- feat: update README ([link](https://github.com/krateoplatformops/snowplow/pull/166)) by @lucasepe
+- feat: more docs and example on restaction list namespaces ([link](https://github.com/krateoplatformops/snowplow/pull/168)) by @lucasepe
+- feat: example and docs about invoking external api with deps ([link](https://github.com/krateoplatformops/snowplow/pull/170)) by @lucasepe
+- feat: add new example link ([link](https://github.com/krateoplatformops/snowplow/pull/172)) by @lucasepe
+
+### 🔧 Other Changes
+- chore: bump plumbing to 0.9.0 ([link](https://github.com/krateoplatformops/snowplow/pull/174)) by @FrancescoL96
+- ci: fix Dockerfile golang version ([link](https://github.com/krateoplatformops/snowplow/pull/176)) by @FrancescoL96
+- chore: bump plumbing dependency to 0.9.1 ([link](https://github.com/krateoplatformops/snowplow/pull/178)) by @FrancescoL96
+- chore: bump plumbing dependency to 0.9.3 ([link](https://github.com/krateoplatformops/snowplow/pull/180)) by @FrancescoL96
+
+
+**Full Changelog**: https://github.com/krateoplatformops/snowplow/compare/0.20.2...0.20.5
+
+
+## finops-operator-scraper v0.5.0
+### What's Changed
+
+### ✨ Features
+- feat: added support for generic metric type ([link](https://github.com/krateoplatformops/finops-operator-scraper/pull/59)) by @FrancescoL96
+
+
+**Full Changelog**: https://github.com/krateoplatformops/finops-operator-scraper/compare/0.4.2...0.5.0
+
+
+## frontend v1.0.5
+### What's Changed
+
+### ✨ Features
+- feat: added examples portal ([link](https://github.com/krateoplatformops/frontend/pull/26)) by @fedepini
+- feat: added cache clearing and config.json update ([link](https://github.com/krateoplatformops/frontend/pull/28)) by @fedepini
+- feat: add initial values property to Form ([link](https://github.com/krateoplatformops/frontend/pull/29)) by @fedepini
+
+### 🐛 Bug Fixes
+- fix: fix Form values update when switching tab ([link](https://github.com/krateoplatformops/frontend/pull/31)) by @fedepini
+
+### 🔧 Other Changes
+- ci: remove smithery in favour of krateoctl ([link](https://github.com/krateoplatformops/frontend/pull/14)) by @braghettos
+- ci: use krateoctl v0.6.3 ([link](https://github.com/krateoplatformops/frontend/pull/16)) by @braghettos
+- ci: set ci to use krateoctl v0.8.5 ([link](https://github.com/krateoplatformops/frontend/pull/20)) by @braghettos
+- ci: set ci to use krateoctl v0.8.6 ([link](https://github.com/krateoplatformops/frontend/pull/22)) by @braghettos
+- ci: set ci to use krateoctl v0.8.9 ([link](https://github.com/krateoplatformops/frontend/pull/25)) by @braghettos
+- chore: deprecate payloadkey property ([link](https://github.com/krateoplatformops/frontend/pull/27)) by @fedepini
+- refactor: updated type for EventList and Notifications ([link](https://github.com/krateoplatformops/frontend/pull/30)) by @fedepini
+
+
+**Full Changelog**: https://github.com/krateoplatformops/frontend/compare/0.0.57...1.0.5
+
+
+## finops-operator-focus v0.4.3
+### What's Changed
+
+
+**Full Changelog**: https://github.com/krateoplatformops/finops-operator-focus/compare/0.4.3...0.4.3
+
+
+## etcd-chart v3.6.6
+### What's Changed
+
+### ✨ Features
+- feat: bump bitnami chart and use ours ([link](https://github.com/krateoplatformops/etcd-chart/pull/13)) by @braghettos
+
+
+**Full Changelog**: https://github.com/krateoplatformops/etcd-chart/compare/11.1.3...3.6.6
+
+
+## eventrouter v0.6.0
+### What's Changed
+
+### ✨ Features
+- feat: disable client-rate limite by default to use k8s apf ([link](https://github.com/krateoplatformops/eventrouter/pull/27)) by @matteogastaldello
+
+
+**Full Changelog**: https://github.com/krateoplatformops/eventrouter/compare/0.5.5...0.6.0
+
+
+## core-provider v0.26.1
+### What's Changed
+
+### 📚 Documentation
+- docs: add gracefullypaused paragraph ([link](https://github.com/krateoplatformops/core-provider/pull/184)) by @matteogastaldello
+- docs: updated cheatsheet with new scenario ([link](https://github.com/krateoplatformops/core-provider/pull/190)) by @vicentinileonardo
+- docs: update cheatsheet with new sections and Helm commands for Githu… ([link](https://github.com/krateoplatformops/core-provider/pull/196)) by @matteogastaldello
+
+### 🔧 Other Changes
+- KRA-840 - add digest and previousDigest in composition status ([link](https://github.com/krateoplatformops/core-provider/pull/186)) by @matteogastaldello
+- KRA-927 - KRA-971 - KRA-805 - refactoring and performance improvements ([link](https://github.com/krateoplatformops/core-provider/pull/189)) by @matteogastaldello
+- chore: update provider-runtime dependency to v0.10.2 ([link](https://github.com/krateoplatformops/core-provider/pull/192)) by @matteogastaldello
+- chore: update Dockerfile to use golang:1.25.3-alpine ([link](https://github.com/krateoplatformops/core-provider/pull/194)) by @matteogastaldello
+
+
+**Full Changelog**: https://github.com/krateoplatformops/core-provider/compare/0.25.2...0.26.1
+
+
+## finops-composition-definition-parser v0.1.2
+### What's Changed
+
+
+**Full Changelog**: https://github.com/krateoplatformops/finops-composition-definition-parser/compare/0.1.2...0.1.2
+
+
+## oasgen-provider v0.9.0
+### What's Changed
+
+### ✨ Features
+- feat: added management of nested fields for identifiers ([link](https://github.com/krateoplatformops/oasgen-provider/pull/84)) by @vicentinileonardo
+- feat: added integration with crdgen v2 + requestFieldMapping ([link](https://github.com/krateoplatformops/oasgen-provider/pull/86)) by @vicentinileonardo
+- feat: added enum handling in allOf merging ([link](https://github.com/krateoplatformops/oasgen-provider/pull/88)) by @vicentinileonardo
+- feat: added escape management for dots in paths + new crdgen ([link](https://github.com/krateoplatformops/oasgen-provider/pull/91)) by @vicentinileonardo
+- feat: added first type of configurable pagination ([link](https://github.com/krateoplatformops/oasgen-provider/pull/93)) by @vicentinileonardo
+
+### 📚 Documentation
+- docs: updated docs ([link](https://github.com/krateoplatformops/oasgen-provider/pull/95)) by @vicentinileonardo
+
+
+**Full Changelog**: https://github.com/krateoplatformops/oasgen-provider/compare/0.7.0...0.9.0
+
+
+## cratedb-chart v0.1.4
+### What's Changed
+
+### ✨ Features
+- feat: added default storageClassName selection + minor general fixes ([link](https://github.com/krateoplatformops/cratedb-chart/pull/10)) by @vicentinileonardo
+
+
+**Full Changelog**: https://github.com/krateoplatformops/cratedb-chart/compare/0.1.3...0.1.4
+
+
+## finops-notebooks-chart v0.1.1
+### What's Changed
+
+
+**Full Changelog**: https://github.com/krateoplatformops/finops-notebooks-chart/compare/0.1.1...0.1.1
+
+
+## portal v1.2.0
+### What's Changed
+
+### ✨ Features
+- feat: modify route to avoid duplication of compositions ([link](https://github.com/krateoplatformops-blueprints/portal/pull/22)) by @braghettos
+
+
+**Full Changelog**: https://github.com/krateoplatformops-blueprints/portal/compare/1.1.0...1.2.0
+
+
+
+<br><br>
 # Release 2.6.0
 
 ## Removed Charts
